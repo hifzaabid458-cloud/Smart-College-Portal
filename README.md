@@ -69,11 +69,9 @@ The project uses:
 - Input validation
 - Protected dashboard pages
 
-## 📁 Project Documentation
+## Project Documentation
 
-Detailed project documentation is available in:
-
-`Smart_College_Portal_Project_Documentation.pdf`
+📄 [View Project Documentation (PDF)](Smart_College_Portal_Documentation.pdf)
 
 ## 🚀 Local Setup
 
