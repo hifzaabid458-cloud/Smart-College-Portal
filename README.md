@@ -78,7 +78,7 @@ The project uses:
 1. Install XAMPP.
 2. Place the project folder inside:
 
-`C:\xampp\htdocs\`
+http://localhost/smart-college-portal/
 
 3. Create the MySQL database.
 4. Import the database tables.
@@ -88,6 +88,7 @@ The project uses:
 
 Developed as a practical academic project demonstrating web development, database management, authentication, and data analytics.
 
-
+## Author
+Hifza Abid
 
 
