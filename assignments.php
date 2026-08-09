@@ -15,22 +15,23 @@ $full_name = $_SESSION['full_name'];
 /* Get Assignments */
 
 $sql = "SELECT
-            id,
-            title,
-            description,
-            course_name,
-            due_date,
-            created_at
+            assignments.id,
+            assignments.title,
+            assignments.course_id,
+            assignments.description,
+            assignments.due_date,
+            courses.course_name,
+            courses.course_code
 
         FROM assignments
 
-        ORDER BY due_date ASC";
+        LEFT JOIN courses
+        ON assignments.course_id = courses.id
+
+        ORDER BY assignments.due_date ASC";
 
 
-$result = mysqli_query(
-    $conn,
-    $sql
-);
+$result = mysqli_query($conn, $sql);
 
 ?>
 
@@ -42,8 +43,7 @@ $result = mysqli_query(
     <meta charset="UTF-8">
 
     <meta name="viewport"
-          content="width=device-width,
-                   initial-scale=1.0">
+          content="width=device-width, initial-scale=1.0">
 
     <title>
         Assignments - Smart College Portal
@@ -89,11 +89,10 @@ $result = mysqli_query(
     <a href="results.php">
         📝 Results
     </a>
-	
-	<a href="student_reports.php">
 
+
+    <a href="student_reports.php">
         📈 My Reports & Analytics
-
     </a>
 
 
@@ -163,21 +162,14 @@ $result = mysqli_query(
         <?php
 
         if (
-            mysqli_num_rows(
-                $result
-            ) > 0
+            mysqli_num_rows($result) > 0
         ) {
 
 
             while (
-
                 $assignment =
-                mysqli_fetch_assoc(
-                    $result
-                )
-
+                mysqli_fetch_assoc($result)
             ):
-
 
         ?>
 
@@ -192,9 +184,7 @@ $result = mysqli_query(
                     <?php
 
                     echo htmlspecialchars(
-                        $assignment[
-                            'title'
-                        ]
+                        $assignment['title']
                     );
 
                     ?>
@@ -208,9 +198,7 @@ $result = mysqli_query(
 
                     echo nl2br(
                         htmlspecialchars(
-                            $assignment[
-                                'description'
-                            ]
+                            $assignment['description']
                         )
                     );
 
@@ -228,11 +216,53 @@ $result = mysqli_query(
 
                     <?php
 
-                    echo htmlspecialchars(
-                        $assignment[
-                            'course_name'
-                        ]
-                    );
+                    if (
+                        !empty(
+                            $assignment['course_name']
+                        )
+                    ) {
+
+                        echo htmlspecialchars(
+                            $assignment['course_name']
+                        );
+
+                    } else {
+
+                        echo "Course ID: "
+                            .
+                            htmlspecialchars(
+                                $assignment['course_id']
+                            );
+
+                    }
+
+                    ?>
+
+
+                    <br>
+
+
+                    <strong>
+                        🔢 Course Code:
+                    </strong>
+
+                    <?php
+
+                    if (
+                        !empty(
+                            $assignment['course_code']
+                        )
+                    ) {
+
+                        echo htmlspecialchars(
+                            $assignment['course_code']
+                        );
+
+                    } else {
+
+                        echo "N/A";
+
+                    }
 
                     ?>
 
@@ -247,27 +277,7 @@ $result = mysqli_query(
                     <?php
 
                     echo htmlspecialchars(
-                        $assignment[
-                            'due_date'
-                        ]
-                    );
-
-                    ?>
-
-
-                    <br>
-
-
-                    <strong>
-                        🕒 Posted:
-                    </strong>
-
-                    <?php
-
-                    echo htmlspecialchars(
-                        $assignment[
-                            'created_at'
-                        ]
+                        $assignment['due_date']
                     );
 
                     ?>
@@ -285,7 +295,6 @@ $result = mysqli_query(
 
 
         } else {
-
 
         ?>
 

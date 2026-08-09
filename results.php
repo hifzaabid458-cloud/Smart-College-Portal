@@ -10,51 +10,97 @@ if (!isset($_SESSION['user_id'])) {
 include 'db.php';
 
 $student_id = $_SESSION['user_id'];
-
 $full_name = $_SESSION['full_name'];
 
 
 /* Get Student Results */
 
 $sql = "SELECT
+            results.id,
             courses.course_name,
+            courses.course_code,
             courses.credit_hours,
             results.marks,
             results.grade,
-            results.grade_point,
-            results.semester,
-            results.created_at
+            results.semester
+
         FROM results
+
         JOIN courses
         ON results.course_id = courses.id
-        WHERE results.student_id = '$student_id'
+
+        WHERE results.student_id = ?
+
         ORDER BY results.semester DESC, results.id DESC";
 
 
-$result = mysqli_query(
-    $conn,
-    $sql
+$stmt = mysqli_prepare($conn, $sql);
+
+mysqli_stmt_bind_param(
+    $stmt,
+    "i",
+    $student_id
 );
+
+mysqli_stmt_execute($stmt);
+
+$result = mysqli_stmt_get_result($stmt);
+
+
+/* Convert Grade to Grade Point */
+
+function getGradePoint($grade)
+{
+    $grade = strtoupper(trim($grade));
+
+    switch ($grade) {
+
+        case "A+":
+        case "A":
+            return 4.00;
+
+        case "A-":
+            return 3.70;
+
+        case "B+":
+            return 3.30;
+
+        case "B":
+            return 3.00;
+
+        case "B-":
+            return 2.70;
+
+        case "C+":
+            return 2.30;
+
+        case "C":
+            return 2.00;
+
+        case "C-":
+            return 1.70;
+
+        case "D":
+            return 1.00;
+
+        case "F":
+            return 0.00;
+
+        default:
+            return 0.00;
+    }
+}
 
 
 /* Group Results By Semester */
 
 $semester_results = [];
 
+while ($row = mysqli_fetch_assoc($result)) {
 
-while (
-    $row =
-    mysqli_fetch_assoc($result)
-) {
+    $semester_name = $row['semester'];
 
-    $semester_name =
-        $row['semester'];
-
-
-    $semester_results[
-        $semester_name
-    ][] = $row;
-
+    $semester_results[$semester_name][] = $row;
 }
 
 
@@ -62,17 +108,10 @@ while (
 
 $total_subjects = 0;
 
+foreach ($semester_results as $semester_data) {
 
-foreach (
-    $semester_results
-    as $semester_data
-) {
-
-    $total_subjects +=
-        count($semester_data);
-
+    $total_subjects += count($semester_data);
 }
-
 
 ?>
 
@@ -84,8 +123,7 @@ foreach (
     <meta charset="UTF-8">
 
     <meta name="viewport"
-          content="width=device-width,
-                   initial-scale=1.0">
+          content="width=device-width, initial-scale=1.0">
 
     <title>
         Results - Smart College Portal
@@ -99,474 +137,428 @@ foreach (
 <body>
 
 
-    <!-- Sidebar -->
+<!-- Sidebar -->
 
-    <div class="sidebar">
+<div class="sidebar">
 
-        <h2>
-            🎓 Smart Portal
-        </h2>
+    <h2>
+        🎓 Smart Portal
+    </h2>
 
+    <a href="dashboard.php">
+        🏠 Dashboard
+    </a>
 
-        <a href="dashboard.php">
-            🏠 Dashboard
-        </a>
+    <a href="profile.php">
+        👤 My Profile
+    </a>
 
+    <a href="courses.php">
+        📚 Courses
+    </a>
 
-        <a href="profile.php">
-            👤 My Profile
-        </a>
+    <a href="attendance.php">
+        📊 Attendance
+    </a>
 
+    <a href="results.php">
+        📝 Results
+    </a>
 
-        <a href="courses.php">
-            📚 Courses
-        </a>
-
-
-        <a href="attendance.php">
-            📊 Attendance
-        </a>
-
-
-        <a href="results.php">
-            📝 Results
-        </a>
-		
-		<a href="student_reports.php">
-
+    <a href="student_reports.php">
         📈 My Reports & Analytics
+    </a>
+
+    <a href="fees.php">
+        💰 Fees
+    </a>
+
+    <a href="announcements.php">
+        📢 Announcements
+    </a>
+
+    <a href="assignments.php">
+        📄 Assignments
+    </a>
+
+    <a href="logout.php"
+       class="logout-link">
+
+        🚪 Logout
 
     </a>
 
-
-        <a href="fees.php">
-            💰 Fees
-        </a>
+</div>
 
 
-        <a href="announcements.php">
-            📢 Announcements
-        </a>
+<!-- Main Content -->
 
+<div class="dashboard-content">
 
-        <a href="assignments.php">
-            📄 Assignments
-        </a>
+    <div class="top-bar">
 
+        <h1>
+            My Results
+        </h1>
 
-        <a href="logout.php"
-           class="logout-link">
+        <div class="student-info">
 
-            🚪 Logout
+            Welcome,
 
-        </a>
+            <strong>
+
+                <?php
+
+                echo htmlspecialchars($full_name);
+
+                ?>
+
+            </strong>
+
+        </div>
 
     </div>
 
 
-    <!-- Main Content -->
+    <!-- Result Summary -->
 
-    <div class="dashboard-content">
+    <div class="result-summary">
 
+        <div class="result-box">
 
-        <div class="top-bar">
-
-            <h1>
-                My Results
-            </h1>
-
-
-            <div class="student-info">
-
-                Welcome,
-
-                <strong>
-
-                    <?php
-
-                    echo htmlspecialchars(
-                        $full_name
-                    );
-
-                    ?>
-
-                </strong>
-
-            </div>
-
-        </div>
-
-
-        <!-- Result Summary -->
-
-        <div class="result-summary">
-
-
-            <div class="result-box">
-
-                <h3>
-                    Total Semesters
-                </h3>
-
-
-                <p>
-
-                    <?php
-
-                    echo count(
-                        $semester_results
-                    );
-
-                    ?>
-
-                </p>
-
-            </div>
-
-
-            <div class="result-box">
-
-                <h3>
-                    Total Subjects
-                </h3>
-
-
-                <p>
-
-                    <?php
-
-                    echo $total_subjects;
-
-                    ?>
-
-                </p>
-
-            </div>
-
-
-            <div class="result-box">
-
-                <h3>
-                    Latest Semester
-                </h3>
-
-
-                <p>
-
-                    <?php
-
-                    if (
-                        count(
-                            $semester_results
-                        ) > 0
-                    ) {
-
-                        echo htmlspecialchars(
-                            array_key_first(
-                                $semester_results
-                            )
-                        );
-
-                    } else {
-
-                        echo "N/A";
-
-                    }
-
-                    ?>
-
-                </p>
-
-            </div>
-
-
-            <div class="result-box">
-
-                <h3>
-                    Status
-                </h3>
-
-
-                <p>
-
-                    <?php
-
-                    if (
-                        $total_subjects > 0
-                    ) {
-
-                        echo "Passed";
-
-                    } else {
-
-                        echo "No Results";
-
-                    }
-
-                    ?>
-
-                </p>
-
-            </div>
-
-
-        </div>
-
-
-        <!-- Semester Results -->
-
-        <?php
-
-        if (
-            count(
-                $semester_results
-            ) > 0
-        ) {
-
-
-            foreach (
-                $semester_results
-                as $semester_name
-                => $results
-            ) {
-
-
-                $total_quality_points = 0;
-
-                $total_credit_hours = 0;
-
-
-                foreach (
-                    $results
-                    as $row
-                ) {
-
-
-                    $total_quality_points +=
-
-                        $row[
-                            'grade_point'
-                        ]
-
-                        *
-
-                        $row[
-                            'credit_hours'
-                        ];
-
-
-                    $total_credit_hours +=
-
-                        $row[
-                            'credit_hours'
-                        ];
-
-                }
-
-
-                if (
-                    $total_credit_hours > 0
-                ) {
-
-                    $sgpa =
-
-                        $total_quality_points
-
-                        /
-
-                        $total_credit_hours;
-
-                } else {
-
-                    $sgpa = 0;
-
-                }
-
-
-        ?>
-
-        <div class="results-table-container">
-
-            <h2>
-
-                <?php
-
-                echo htmlspecialchars(
-                    $semester_name
-                );
-
-                ?>
-
-                Results
-
-                —
-
-                SGPA:
-
-                <?php
-
-                echo number_format(
-                    $sgpa,
-                    2
-                );
-
-                ?>
-
-            </h2>
-
-
-            <table
-                class="results-table">
-
-
-                <thead>
-
-                    <tr>
-
-                        <th>
-                            Subject
-                        </th>
-
-                        <th>
-                            Credit Hours
-                        </th>
-
-                        <th>
-                            Marks
-                        </th>
-
-                        <th>
-                            Grade
-                        </th>
-
-                        <th>
-                            Grade Point
-                        </th>
-
-                    </tr>
-
-                </thead>
-
-
-                <tbody>
-				<?php
-
-                    foreach (
-                        $results
-                        as $row
-                    ) {
-
-                    ?>
-
-                    <tr>
-
-                        <td>
-
-                            <?php
-
-                            echo htmlspecialchars(
-                                $row['course_name']
-                            );
-
-                            ?>
-
-                        </td>
-
-
-                        <td>
-
-                            <?php
-
-                            echo $row[
-                                'credit_hours'
-                            ];
-
-                            ?>
-
-                        </td>
-
-
-                        <td>
-
-                            <?php
-
-                            echo $row[
-                                'marks'
-                            ];
-
-                            ?>
-
-                        </td>
-
-
-                        <td>
-
-                            <?php
-
-                            echo htmlspecialchars(
-                                $row['grade']
-                            );
-
-                            ?>
-
-                        </td>
-
-
-                        <td>
-
-                            <?php
-
-                            echo $row[
-                                'grade_point'
-                            ];
-
-                            ?>
-
-                        </td>
-
-                    </tr>
-
-
-                    <?php
-
-                    }
-
-                    ?>
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-
-        <?php
-
-            }
-
-        } else {
-
-        ?>
-
-        <div class="results-table-container">
-
-            <h2>
-                Semester Results
-            </h2>
+            <h3>
+                Total Semesters
+            </h3>
 
             <p>
-                No results available yet.
+
+                <?php
+
+                echo count($semester_results);
+
+                ?>
+
             </p>
 
         </div>
 
-        <?php
+
+        <div class="result-box">
+
+            <h3>
+                Total Subjects
+            </h3>
+
+            <p>
+
+                <?php
+
+                echo $total_subjects;
+
+                ?>
+
+            </p>
+
+        </div>
+
+
+        <div class="result-box">
+
+            <h3>
+                Latest Semester
+            </h3>
+
+            <p>
+
+                <?php
+
+                if (count($semester_results) > 0) {
+
+                    echo htmlspecialchars(
+                        array_key_first($semester_results)
+                    );
+
+                } else {
+
+                    echo "N/A";
+
+                }
+
+                ?>
+
+            </p>
+
+        </div>
+
+
+        <div class="result-box">
+
+            <h3>
+                Status
+            </h3>
+
+            <p>
+
+                <?php
+
+                if ($total_subjects > 0) {
+
+                    echo "Available";
+
+                } else {
+
+                    echo "No Results";
+
+                }
+
+                ?>
+
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- Semester Results -->
+
+    <?php
+
+    if (count($semester_results) > 0) {
+
+        foreach (
+            $semester_results
+            as $semester_name => $results
+        ) {
+
+
+            $total_quality_points = 0;
+
+            $total_credit_hours = 0;
+
+
+            foreach ($results as $row) {
+
+                $grade_point =
+                    getGradePoint(
+                        $row['grade']
+                    );
+
+
+                $total_quality_points +=
+                    $grade_point *
+                    $row['credit_hours'];
+
+
+                $total_credit_hours +=
+                    $row['credit_hours'];
+            }
+
+
+            if ($total_credit_hours > 0) {
+
+                $sgpa =
+                    $total_quality_points /
+                    $total_credit_hours;
+
+            } else {
+
+                $sgpa = 0;
+            }
+
+    ?>
+
+    <div class="results-table-container">
+
+        <h2>
+
+            <?php
+
+            echo htmlspecialchars(
+                $semester_name
+            );
+
+            ?>
+
+            Results — SGPA:
+
+            <?php
+
+            echo number_format(
+                $sgpa,
+                2
+            );
+
+            ?>
+
+        </h2>
+
+
+        <table class="results-table">
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        Subject
+                    </th>
+
+                    <th>
+                        Course Code
+                    </th>
+
+                    <th>
+                        Credit Hours
+                    </th>
+
+                    <th>
+                        Marks
+                    </th>
+
+                    <th>
+                        Grade
+                    </th>
+
+                    <th>
+                        Grade Point
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+            <?php
+
+            foreach ($results as $row) {
+
+                $grade_point =
+                    getGradePoint(
+                        $row['grade']
+                    );
+
+            ?>
+
+                <tr>
+
+                    <td>
+
+                        <?php
+
+                        echo htmlspecialchars(
+                            $row['course_name']
+                        );
+
+                        ?>
+
+                    </td>
+
+
+                    <td>
+
+                        <?php
+
+                        echo htmlspecialchars(
+                            $row['course_code']
+                        );
+
+                        ?>
+
+                    </td>
+
+
+                    <td>
+
+                        <?php
+
+                        echo $row['credit_hours'];
+
+                        ?>
+
+                    </td>
+
+
+                    <td>
+
+                        <?php
+
+                        echo $row['marks'];
+
+                        ?>
+
+                    </td>
+
+
+                    <td>
+
+                        <?php
+
+                        echo htmlspecialchars(
+                            $row['grade']
+                        );
+
+                        ?>
+
+                    </td>
+
+
+                    <td>
+
+                        <?php
+
+                        echo number_format(
+                            $grade_point,
+                            2
+                        );
+
+                        ?>
+
+                    </td>
+
+                </tr>
+
+            <?php
+
+            }
+
+            ?>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    <?php
 
         }
 
-        ?>
+    } else {
+
+    ?>
+
+    <div class="results-table-container">
+
+        <h2>
+            Semester Results
+        </h2>
+
+        <p>
+            No results available yet.
+        </p>
 
     </div>
+
+    <?php
+
+    }
+
+    ?>
+
+</div>
 
 </body>
 

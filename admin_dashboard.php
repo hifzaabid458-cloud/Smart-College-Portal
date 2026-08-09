@@ -423,14 +423,7 @@ body {
         📊 Manage Attendance
 
     </a>
-
-
-    <a href="teacher_gpa.php">
-
-        🎓 Teacher GPA Calculator
-
-    </a>
-
+  
 
     <a href="view_results.php">
 
@@ -712,34 +705,7 @@ body {
 
         </div>
 
-
-        <div class="dashboard-card">
-
-
-            <h3>
-
-                🎓 Teacher GPA Calculator
-
-            </h3>
-
-
-            <p>
-
-                Calculate and manage students' GPA.
-
-            </p>
-
-
-            <a href="teacher_gpa.php">
-
-                Open
-
-            </a>
-
-
-        </div>
-
-
+        
     </div>
 
 

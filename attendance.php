@@ -10,7 +10,6 @@ if (!isset($_SESSION['user_id'])) {
 include 'db.php';
 
 $student_id = $_SESSION['user_id'];
-
 $full_name = $_SESSION['full_name'];
 
 
@@ -18,75 +17,62 @@ $full_name = $_SESSION['full_name'];
 
 $sql = "SELECT
             courses.course_name,
-            attendance.total_classes,
-            attendance.attended_classes,
-            (
-                attendance.total_classes
-                -
-                attendance.attended_classes
-            ) AS missed_classes
+            courses.course_code,
+            courses.credit_hours,
+            attendance.attendance_percentage
 
         FROM attendance
 
         JOIN courses
         ON attendance.course_id = courses.id
 
-        WHERE attendance.student_id = '$student_id'
+        WHERE attendance.student_id = ?
 
-        ORDER BY attendance.id DESC";
+        ORDER BY courses.course_name ASC";
 
 
-$result = mysqli_query(
-    $conn,
-    $sql
+$stmt = mysqli_prepare($conn, $sql);
+
+mysqli_stmt_bind_param(
+    $stmt,
+    "i",
+    $student_id
 );
 
+mysqli_stmt_execute($stmt);
 
-/* Overall Attendance */
+$result = mysqli_stmt_get_result($stmt);
 
-$total_classes = 0;
 
-$total_attended = 0;
+/* Store Attendance Records */
 
 $attendance_records = [];
 
+$total_percentage = 0;
+$record_count = 0;
 
-while (
-    $row =
-    mysqli_fetch_assoc($result)
-) {
+
+while ($row = mysqli_fetch_assoc($result)) {
 
     $attendance_records[] = $row;
 
-    $total_classes +=
-        $row['total_classes'];
+    $total_percentage +=
+        (float)$row['attendance_percentage'];
 
-    $total_attended +=
-        $row['attended_classes'];
-
+    $record_count++;
 }
 
 
-$total_missed =
-    $total_classes
-    -
-    $total_attended;
+/* Calculate Overall Attendance */
 
-
-if ($total_classes > 0) {
+if ($record_count > 0) {
 
     $overall_percentage =
-        (
-            $total_attended
-            /
-            $total_classes
-        )
-        * 100;
+        $total_percentage / $record_count;
 
 } else {
 
     $overall_percentage = 0;
-
 }
 
 ?>
@@ -99,8 +85,7 @@ if ($total_classes > 0) {
     <meta charset="UTF-8">
 
     <meta name="viewport"
-          content="width=device-width,
-                   initial-scale=1.0">
+          content="width=device-width, initial-scale=1.0">
 
     <title>
         Attendance - Smart College Portal
@@ -122,52 +107,41 @@ if ($total_classes > 0) {
         🎓 Smart Portal
     </h2>
 
-
     <a href="dashboard.php">
         🏠 Dashboard
     </a>
-
 
     <a href="profile.php">
         👤 My Profile
     </a>
 
-
     <a href="courses.php">
         📚 Courses
     </a>
-
 
     <a href="attendance.php">
         📊 Attendance
     </a>
 
-
     <a href="results.php">
         📝 Results
     </a>
-	
-	<a href="student_reports.php">
 
+    <a href="student_reports.php">
         📈 My Reports & Analytics
-
     </a>
-
 
     <a href="fees.php">
         💰 Fees
     </a>
 
-
     <a href="announcements.php">
         📢 Announcements
     </a>
 
-
     <a href="assignments.php">
         📄 Assignments
     </a>
-
 
     <a href="logout.php"
        class="logout-link">
@@ -190,7 +164,6 @@ if ($total_classes > 0) {
             Attendance
         </h1>
 
-
         <div class="student-info">
 
             Welcome,
@@ -199,9 +172,7 @@ if ($total_classes > 0) {
 
                 <?php
 
-                echo htmlspecialchars(
-                    $full_name
-                );
+                echo htmlspecialchars($full_name);
 
                 ?>
 
@@ -212,77 +183,15 @@ if ($total_classes > 0) {
     </div>
 
 
-    <!-- Attendance Summary -->
+    <!-- Overall Attendance -->
 
     <div class="attendance-summary">
-
-
-        <div class="attendance-box">
-
-            <h3>
-                Total Classes
-            </h3>
-
-
-            <p>
-
-                <?php
-
-                echo $total_classes;
-
-                ?>
-
-            </p>
-
-        </div>
-
-
-        <div class="attendance-box">
-
-            <h3>
-                Classes Attended
-            </h3>
-
-
-            <p>
-
-                <?php
-
-                echo $total_attended;
-
-                ?>
-
-            </p>
-
-        </div>
-
-
-        <div class="attendance-box">
-
-            <h3>
-                Classes Missed
-            </h3>
-
-
-            <p>
-
-                <?php
-
-                echo $total_missed;
-
-                ?>
-
-            </p>
-
-        </div>
-
 
         <div class="attendance-box">
 
             <h3>
                 Overall Attendance
             </h3>
-
 
             <p>
 
@@ -299,7 +208,6 @@ if ($total_classes > 0) {
 
         </div>
 
-
     </div>
 
 
@@ -307,44 +215,32 @@ if ($total_classes > 0) {
 
     <div class="attendance-table-container">
 
-
         <h2>
             Subject-wise Attendance
         </h2>
 
 
-        <table
-            class="attendance-table">
-
+        <table class="attendance-table">
 
             <thead>
 
                 <tr>
 
                     <th>
-                        Subject
+                        Course
                     </th>
-
 
                     <th>
-                        Total Classes
+                        Course Code
                     </th>
-
 
                     <th>
-                        Attended
+                        Credit Hours
                     </th>
-
 
                     <th>
-                        Missed
+                        Attendance
                     </th>
-
-
-                    <th>
-                        Percentage
-                    </th>
-
 
                     <th>
                         Status
@@ -360,56 +256,25 @@ if ($total_classes > 0) {
 
             <?php
 
-            if (
-                count(
-                    $attendance_records
-                ) > 0
-            ) {
+            if (count($attendance_records) > 0) {
 
-
-                foreach (
-
-                    $attendance_records
-                    as $row
-
-                ) {
-
+                foreach ($attendance_records as $row) {
 
                     $percentage =
-
-                        (
-                            $row[
-                                'attended_classes'
-                            ]
-
-                            /
-
-                            $row[
-                                'total_classes'
-                            ]
-
-                        )
-                        * 100;
+                        (float)$row['attendance_percentage'];
 
 
-                    if (
-                        $percentage >= 85
-                    ) {
+                    if ($percentage >= 85) {
 
-                        $status =
-                            "Good";
+                        $status = "Good";
 
-                    } elseif (
-                        $percentage >= 75
-                    ) {
+                    } elseif ($percentage >= 75) {
 
-                        $status =
-                            "Warning";
+                        $status = "Warning";
 
                     } else {
 
-                        $status =
-                            "Low";
+                        $status = "Low";
 
                     }
 
@@ -418,15 +283,12 @@ if ($total_classes > 0) {
 
                 <tr>
 
-
                     <td>
 
                         <?php
 
                         echo htmlspecialchars(
-                            $row[
-                                'course_name'
-                            ]
+                            $row['course_name']
                         );
 
                         ?>
@@ -438,9 +300,9 @@ if ($total_classes > 0) {
 
                         <?php
 
-                        echo $row[
-                            'total_classes'
-                        ];
+                        echo htmlspecialchars(
+                            $row['course_code']
+                        );
 
                         ?>
 
@@ -451,22 +313,9 @@ if ($total_classes > 0) {
 
                         <?php
 
-                        echo $row[
-                            'attended_classes'
-                        ];
-
-                        ?>
-
-                    </td>
-
-
-                    <td>
-
-                        <?php
-
-                        echo $row[
-                            'missed_classes'
-                        ];
+                        echo htmlspecialchars(
+                            $row['credit_hours']
+                        );
 
                         ?>
 
@@ -497,7 +346,6 @@ if ($total_classes > 0) {
 
                     </td>
 
-
                 </tr>
 
 
@@ -505,17 +353,14 @@ if ($total_classes > 0) {
 
                 }
 
-
             } else {
-
 
             ?>
 
 
                 <tr>
 
-                    <td
-                        colspan="6">
+                    <td colspan="5">
 
                         No attendance records
                         available yet.

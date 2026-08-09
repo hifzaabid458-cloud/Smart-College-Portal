@@ -12,9 +12,13 @@ include 'db.php';
 $message = "";
 
 
-/* Add Assignment */
+/* =========================
+   Add Assignment
+========================= */
 
 if (isset($_POST['add_assignment'])) {
+
+    $course_id = intval($_POST['course_id']);
 
     $title = mysqli_real_escape_string(
         $conn,
@@ -26,101 +30,83 @@ if (isset($_POST['add_assignment'])) {
         $_POST['description']
     );
 
-    $course_name = mysqli_real_escape_string(
-        $conn,
-        $_POST['course_name']
-    );
-
     $due_date = $_POST['due_date'];
 
 
     $sql = "INSERT INTO assignments
-            (
-                title,
-                description,
-                course_name,
-                due_date
-            )
-
+            (course_id, title, description, due_date)
             VALUES
-
-            (
-                '$title',
-                '$description',
-                '$course_name',
-                '$due_date'
-            )";
+            ('$course_id', '$title', '$description', '$due_date')";
 
 
     if (mysqli_query($conn, $sql)) {
 
-        $message =
-            "Assignment added successfully!";
+        $message = "Assignment added successfully!";
 
     } else {
 
-        $message =
-            "Error: "
-            . mysqli_error($conn);
+        $message = "Error: " . mysqli_error($conn);
 
     }
-
 }
 
 
-/* Delete Assignment */
+/* =========================
+   Delete Assignment
+========================= */
 
 if (isset($_GET['delete_id'])) {
 
-    $delete_id =
-        intval($_GET['delete_id']);
+    $delete_id = intval($_GET['delete_id']);
 
-
-    $delete_sql =
-        "DELETE FROM assignments
-         WHERE id = '$delete_id'";
-
+    $delete_sql = "DELETE FROM assignments
+                   WHERE id = '$delete_id'";
 
     if (mysqli_query($conn, $delete_sql)) {
 
-        header(
-            "Location: admin_manage_assignments.php"
-        );
-
+        header("Location: admin_manage_assignments.php");
         exit();
 
     } else {
 
-        echo
-            "Error: "
-            . mysqli_error($conn);
+        $message = "Error: " . mysqli_error($conn);
 
     }
-
 }
 
 
-/* Get Courses */
+/* =========================
+   Get Courses
+========================= */
 
 $courses = mysqli_query(
     $conn,
-
-    "SELECT course_name
+    "SELECT id, course_name
      FROM courses
      ORDER BY course_name ASC"
 );
 
 
-/* Get Assignments */
+/* =========================
+   Get Assignments
+========================= */
 
 $assignments = mysqli_query(
     $conn,
-
-    "SELECT *
+    "SELECT
+        assignments.id,
+        assignments.course_id,
+        courses.course_name,
+        assignments.title,
+        assignments.description,
+        assignments.due_date
 
      FROM assignments
 
-     ORDER BY due_date ASC"
+     LEFT JOIN courses
+     ON assignments.course_id = courses.id
+
+     ORDER BY assignments.due_date ASC"
 );
 
 ?>
@@ -133,12 +119,9 @@ $assignments = mysqli_query(
 <meta charset="UTF-8">
 
 <meta name="viewport"
-content="width=device-width,
-initial-scale=1.0">
+content="width=device-width, initial-scale=1.0">
 
-<title>
-Manage Assignments - Smart College Portal
-</title>
+<title>Manage Assignments - Smart College Portal</title>
 
 <style>
 
@@ -165,6 +148,7 @@ body {
     height: 100vh;
     background: #1e1b4b;
     padding: 25px 15px;
+    overflow-y: auto;
 }
 
 .sidebar h2 {
@@ -227,6 +211,10 @@ body {
     color: white;
     text-decoration: none;
     border-radius: 6px;
+}
+
+.back:hover {
+    background: #5b21b6;
 }
 
 
@@ -341,6 +329,9 @@ tr:hover {
     background: #f9f7ff;
 }
 
+
+/* Delete */
+
 .delete-button {
     color: red;
     font-weight: bold;
@@ -384,82 +375,67 @@ tr:hover {
 
 <div class="sidebar">
 
-    <h2>
-        Smart College
-    </h2>
-
+    <h2>Smart College</h2>
 
     <a href="admin_dashboard.php">
         🏠 Dashboard
     </a>
 
-
     <a href="manage_students.php">
         👨‍🎓 Manage Students
     </a>
-
 
     <a href="manage_courses.php">
         📚 Manage Courses
     </a>
 
-
     <a href="manage_teachers.php">
         👨‍🏫 Manage Teachers
     </a>
 
-
     <a href="manage_records.php">
         📋 Manage Records
     </a>
-	
-	<a href="admin_manage_fees.php">
-    💰 Manage Fees
-</a>
 
-<a href="admin_manage_announcements.php">
-    📢 Manage Announcements
-</a>
-
-<a href="admin_manage_assignments.php">
-    📄 Manage Assignments
-</a>
-
-<a href="manage_attendance.php">
-        📊 Manage Attendance
+    <a href="admin_manage_fees.php">
+        💰 Manage Fees
     </a>
 
+    <a href="admin_manage_announcements.php">
+        📢 Manage Announcements
+    </a>
+
+    <a href="admin_manage_assignments.php">
+        📄 Manage Assignments
+    </a>
+
+    <a href="manage_attendance.php">
+        📊 Manage Attendance
+    </a>
 
     <a href="teacher_gpa.php">
         🎓 Teacher GPA Calculator
     </a>
 
-
     <a href="view_results.php">
         📋 View Results
     </a>
-
 
     <a href="calculate_sgpa.php">
         📊 Calculate SGPA
     </a>
 
-
     <a href="calculate_cgpa.php">
         📈 Calculate CGPA
     </a>
-
 
     <a href="admin_reports.php">
         📊 Reports & Analytics
     </a>
 
-
     <a href="admin_logout.php"
        class="logout-link">
-
         🚪 Logout
-
     </a>
 
 </div>
@@ -476,11 +452,8 @@ tr:hover {
             Manage Assignments
         </h1>
 
-
         <div class="admin-info">
-
             👤 Administrator
-
         </div>
 
     </div>
@@ -503,21 +476,13 @@ tr:hover {
         </h2>
 
 
-        <?php
+        <?php if ($message != ""): ?>
 
-        if ($message != "") {
+            <div class="message">
+                <?php echo htmlspecialchars($message); ?>
+            </div>
 
-            echo
-                "<div class='message'>";
-
-            echo $message;
-
-            echo
-                "</div>";
-
-        }
-
-        ?>
+        <?php endif; ?>
 
 
         <form method="POST">
@@ -526,9 +491,62 @@ tr:hover {
             <div class="form-group">
 
                 <label>
-                    Assignment Title
+                    Select Course
                 </label>
 
+                <select
+                    name="course_id"
+                    required
+                >
+
+                    <option value="">
+                        Select Course
+                    </option>
+
+
+                    <?php
+
+                    if (mysqli_num_rows($courses) > 0):
+
+                        while (
+                            $course =
+                            mysqli_fetch_assoc($courses)
+                        ):
+
+                    ?>
+
+                    <option
+                        value="<?php echo $course['id']; ?>"
+                    >
+
+                        <?php
+
+                        echo htmlspecialchars(
+                            $course['course_name']
+                        );
+
+                        ?>
+
+                    </option>
+
+                    <?php
+
+                        endwhile;
+
+                    endif;
+
+                    ?>
+
+                </select>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label>
+                    Assignment Title
+                </label>
 
                 <input
                     type="text"
@@ -546,7 +564,6 @@ tr:hover {
                     Description
                 </label>
 
-
                 <textarea
                     name="description"
                     placeholder="Write assignment description"
@@ -559,76 +576,8 @@ tr:hover {
             <div class="form-group">
 
                 <label>
-                    Select Course
-                </label>
-
-
-                <select
-                    name="course_name"
-                    required
-                >
-
-                    <option value="">
-                        Select Course
-                    </option>
-
-
-                    <?php
-
-                    while (
-
-                        $course =
-                        mysqli_fetch_assoc(
-                            $courses
-                        )
-
-                    ):
-
-                    ?>
-
-
-                    <option
-                        value="<?php
-
-                        echo htmlspecialchars(
-                            $course[
-                                'course_name'
-                            ]
-                        );
-
-                        ?>"
-                    >
-
-                        <?php
-
-                        echo htmlspecialchars(
-                            $course[
-                                'course_name'
-                            ]
-                        );
-
-                        ?>
-
-                    </option>
-
-
-                    <?php
-
-                    endwhile;
-
-                    ?>
-
-                </select>
-
-            </div>
-
-
-            <div class="form-group">
-
-                <label>
                     Due Date
                 </label>
-
 
                 <input
                     type="date"
@@ -668,29 +617,19 @@ tr:hover {
 
                 <tr>
 
-                    <th>
-                        ID
-                    </th>
+                    <th>ID</th>
 
-                    <th>
-                        Title
-                    </th>
+                    <th>Course ID</th>
 
-                    <th>
-                        Course
-                    </th>
+                    <th>Course Name</th>
 
-                    <th>
-                        Due Date
-                    </th>
+                    <th>Title</th>
 
-                    <th>
-                        Description
-                    </th>
+                    <th>Description</th>
 
-                    <th>
-                        Action
-                    </th>
+                    <th>Due Date</th>
+
+                    <th>Action</th>
 
                 </tr>
 
@@ -698,92 +637,64 @@ tr:hover {
                 <?php
 
                 if (
-                    mysqli_num_rows(
-                        $assignments
-                    ) > 0
+                    mysqli_num_rows($assignments) > 0
                 ):
 
-
                     while (
-
                         $assignment =
-                        mysqli_fetch_assoc(
-                            $assignments
-                        )
-
+                        mysqli_fetch_assoc($assignments)
                     ):
 
                 ?>
 
-
                 <tr>
 
                     <td>
-
                         <?php
-
-                        echo
-                            $assignment['id'];
-
+                        echo $assignment['id'];
                         ?>
-
                     </td>
 
+                    <td>
+                        <?php
+                        echo $assignment['course_id'];
+                        ?>
+                    </td>
 
                     <td>
-
                         <?php
+                        echo htmlspecialchars(
+                            $assignment['course_name']
+                            ?? 'Unknown Course'
+                        );
+                        ?>
+                    </td>
 
+                    <td>
+                        <?php
                         echo htmlspecialchars(
                             $assignment['title']
                         );
-
                         ?>
-
                     </td>
 
-
                     <td>
-
                         <?php
-
-                        echo htmlspecialchars(
-                            $assignment['course_name']
-                        );
-
-                        ?>
-
-                    </td>
-
-
-                    <td>
-
-                        <?php
-
-                        echo
-                            $assignment['due_date'];
-
-                        ?>
-
-                    </td>
-
-
-                    <td>
-
-                        <?php
-
                         echo nl2br(
                             htmlspecialchars(
-                                $assignment[
-                                    'description'
-                                ]
+                                $assignment['description']
                             )
                         );
-
                         ?>
-
                     </td>
 
+                    <td>
+                        <?php
+                        echo htmlspecialchars(
+                            $assignment['due_date']
+                        );
+                        ?>
+                    </td>
 
                     <td>
 
@@ -801,27 +712,21 @@ tr:hover {
 
                 </tr>
 
-
                 <?php
 
                     endwhile;
-
 
                 else:
 
                 ?>
 
-
                 <tr>
 
-                    <td colspan="6">
-
+                    <td colspan="7">
                         No assignments available.
-
                     </td>
 
                 </tr>
-
 
                 <?php
 
@@ -829,16 +734,13 @@ tr:hover {
 
                 ?>
 
-
             </table>
 
         </div>
 
     </div>
 
-
 </div>
-
 
 </body>
 

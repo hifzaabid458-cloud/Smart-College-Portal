@@ -10,14 +10,15 @@ if (!isset($_SESSION['admin_id'])) {
 include 'db.php';
 
 $message = "";
+
+
 /* Delete Fee Record */
 
 if (isset($_GET['delete_id'])) {
 
     $delete_id = intval($_GET['delete_id']);
 
-    $delete_sql = "DELETE FROM fees
-                   WHERE id = '$delete_id'";
+    $delete_sql = "DELETE FROM fees WHERE id = '$delete_id'";
 
     if (mysqli_query($conn, $delete_sql)) {
 
@@ -26,10 +27,9 @@ if (isset($_GET['delete_id'])) {
 
     } else {
 
-        echo "Error: " . mysqli_error($conn);
+        $message = "Error: " . mysqli_error($conn);
 
     }
-
 }
 
 
@@ -37,64 +37,40 @@ if (isset($_GET['delete_id'])) {
 
 if (isset($_POST['add_fee'])) {
 
-    $student_id = $_POST['student_id'];
-    $total_fee = $_POST['total_fee'];
-    $paid_amount = $_POST['paid_amount'];
+    $student_id = intval($_POST['student_id']);
+    $amount = floatval($_POST['amount']);
+    $status = mysqli_real_escape_string(
+        $conn,
+        $_POST['status']
+    );
     $due_date = $_POST['due_date'];
-
-    $remaining_fee =
-        $total_fee - $paid_amount;
-
-
-    /* Automatically Set Status */
-
-    if ($paid_amount <= 0) {
-
-        $status = "Unpaid";
-
-    } elseif ($paid_amount < $total_fee) {
-
-        $status = "Partial";
-
-    } else {
-
-        $status = "Paid";
-
-    }
 
 
     $sql = "INSERT INTO fees
             (
                 student_id,
-                total_fee,
-                paid_amount,
-                due_date,
-                status
+                amount,
+                status,
+                due_date
             )
-
             VALUES
             (
                 '$student_id',
-                '$total_fee',
-                '$paid_amount',
-                '$due_date',
-                '$status'
+                '$amount',
+                '$status',
+                '$due_date'
             )";
 
 
     if (mysqli_query($conn, $sql)) {
 
-        $message =
-            "Fee record added successfully!";
+        $message = "Fee record added successfully!";
 
     } else {
 
-        $message =
-            "Error: "
-            . mysqli_error($conn);
+        $message = "Error: " . mysqli_error($conn);
 
     }
-
 }
 
 
@@ -104,6 +80,7 @@ $students = mysqli_query(
     $conn,
     "SELECT id, full_name
      FROM users
+     WHERE role = 'student'
      ORDER BY full_name ASC"
 );
 
@@ -116,10 +93,9 @@ $fees = mysqli_query(
         fees.id,
         fees.student_id,
         users.full_name,
-        fees.total_fee,
-        fees.paid_amount,
-        fees.due_date,
-        fees.status
+        fees.amount,
+        fees.status,
+        fees.due_date
 
      FROM fees
 
@@ -172,6 +148,7 @@ body {
     height: 100vh;
     background: #1e1b4b;
     padding: 25px 15px;
+    overflow-y: auto;
 }
 
 .sidebar h2 {
@@ -234,6 +211,10 @@ body {
     color: white;
     text-decoration: none;
     border-radius: 6px;
+}
+
+.back:hover {
+    background: #5b21b6;
 }
 
 
@@ -340,6 +321,16 @@ tr:hover {
     background: #f9f7ff;
 }
 
+.delete-link {
+    color: red;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.delete-link:hover {
+    text-decoration: underline;
+}
+
 
 /* Responsive */
 
@@ -396,29 +387,30 @@ tr:hover {
     <a href="manage_teachers.php">
         👨‍🏫 Manage Teachers
     </a>
-	
-	<a href="manage_records.php">
-        📋 Manage Records
-    </a>
-	
-	<a href="admin_manage_fees.php">
-    💰 Manage Fees
-</a>
 
-<a href="admin_manage_announcements.php">
-    📢 Manage Announcements
-</a>
-
-<a href="admin_manage_assignments.php">
-    📄 Manage Assignments
-</a>
-
-<a href="manage_attendance.php">
-        📊 Manage Attendance
-    </a>
 
     <a href="manage_records.php">
         📋 Manage Records
+    </a>
+
+
+    <a href="admin_manage_fees.php">
+        💰 Manage Fees
+    </a>
+
+
+    <a href="admin_manage_announcements.php">
+        📢 Manage Announcements
+    </a>
+
+
+    <a href="admin_manage_assignments.php">
+        📄 Manage Assignments
+    </a>
+
+
+    <a href="manage_attendance.php">
+        📊 Manage Attendance
     </a>
 
 
@@ -501,7 +493,7 @@ tr:hover {
 
             echo "<div class='message'>";
 
-            echo $message;
+            echo htmlspecialchars($message);
 
             echo "</div>";
 
@@ -533,36 +525,26 @@ tr:hover {
                     <?php
 
                     while (
-
                         $student =
-                        mysqli_fetch_assoc(
-                            $students
-                        )
-
+                        mysqli_fetch_assoc($students)
                     ):
 
                     ?>
 
 
-                        <option
-                            value="<?php
+                    <option
+                        value="<?php echo $student['id']; ?>"
+                    >
 
-                            echo $student['id'];
+                        <?php
 
-                            ?>"
-                        >
+                        echo htmlspecialchars(
+                            $student['full_name']
+                        );
 
-                            <?php
+                        ?>
 
-                            echo htmlspecialchars(
-                                $student[
-                                    'full_name'
-                                ]
-                            );
-
-                            ?>
-
-                        </option>
+                    </option>
 
 
                     <?php
@@ -579,15 +561,16 @@ tr:hover {
             <div class="form-group">
 
                 <label>
-                    Total Fee (Rs.)
+                    Amount (Rs.)
                 </label>
 
 
                 <input
                     type="number"
-                    name="total_fee"
+                    name="amount"
                     min="0"
                     step="0.01"
+                    placeholder="Enter fee amount"
                     required
                 >
 
@@ -597,17 +580,32 @@ tr:hover {
             <div class="form-group">
 
                 <label>
-                    Paid Amount (Rs.)
+                    Status
                 </label>
 
 
-                <input
-                    type="number"
-                    name="paid_amount"
-                    min="0"
-                    step="0.01"
+                <select
+                    name="status"
                     required
                 >
+
+                    <option value="">
+                        Select Status
+                    </option>
+
+                    <option value="Paid">
+                        Paid
+                    </option>
+
+                    <option value="Partial">
+                        Partial
+                    </option>
+
+                    <option value="Unpaid">
+                        Unpaid
+                    </option>
+
+                </select>
 
             </div>
 
@@ -667,11 +665,11 @@ tr:hover {
                     </th>
 
                     <th>
-                        Total Fee
+                        Amount
                     </th>
 
                     <th>
-                        Paid Amount
+                        Status
                     </th>
 
                     <th>
@@ -679,10 +677,6 @@ tr:hover {
                     </th>
 
                     <th>
-                        Status
-                    </th>
-					
-					<th>
                         Action
                     </th>
 
@@ -692,19 +686,12 @@ tr:hover {
                 <?php
 
                 if (
-                    mysqli_num_rows(
-                        $fees
-                    ) > 0
+                    mysqli_num_rows($fees) > 0
                 ):
 
-
                     while (
-
                         $fee =
-                        mysqli_fetch_assoc(
-                            $fees
-                        )
-
+                        mysqli_fetch_assoc($fees)
                     ):
 
                 ?>
@@ -715,10 +702,35 @@ tr:hover {
                     <td>
 
                         <?php
+                        echo $fee['student_id'];
+                        ?>
 
-                        echo $fee[
-                            'student_id'
-                        ];
+                    </td>
+
+
+                    <td>
+
+                        <?php
+
+                        echo htmlspecialchars(
+                            $fee['full_name']
+                        );
+
+                        ?>
+
+                    </td>
+
+
+                    <td>
+
+                        Rs.
+
+                        <?php
+
+                        echo number_format(
+                            $fee['amount'],
+                            2
+                        );
 
                         ?>
 
@@ -730,45 +742,7 @@ tr:hover {
                         <?php
 
                         echo htmlspecialchars(
-                            $fee[
-                                'full_name'
-                            ]
-                        );
-
-                        ?>
-
-                    </td>
-
-
-                    <td>
-
-                        Rs.
-
-                        <?php
-
-                        echo number_format(
-                            $fee[
-                                'total_fee'
-                            ],
-                            2
-                        );
-
-                        ?>
-
-                    </td>
-
-
-                    <td>
-
-                        Rs.
-
-                        <?php
-
-                        echo number_format(
-                            $fee[
-                                'paid_amount'
-                            ],
-                            2
+                            $fee['status']
                         );
 
                         ?>
@@ -780,9 +754,9 @@ tr:hover {
 
                         <?php
 
-                        echo $fee[
-                            'due_date'
-                        ];
+                        echo htmlspecialchars(
+                            $fee['due_date']
+                        );
 
                         ?>
 
@@ -791,27 +765,16 @@ tr:hover {
 
                     <td>
 
-                        <?php
+                        <a
+                            href="admin_manage_fees.php?delete_id=<?php echo $fee['id']; ?>"
+                            onclick="return confirm('Are you sure you want to delete this fee record?');"
+                            class="delete-link"
+                        >
 
-                        echo $fee[
-                            'status'
-                        ];
+                            Delete
 
-                        ?>
+                        </a>
 
-<td>
-
-    <a
-        href="admin_manage_fees.php?delete_id=<?php echo $fee['id']; ?>"
-        onclick="return confirm('Are you sure you want to delete this fee record?');"
-        style="color: red; font-weight: bold;"
-    >
-
-        Delete
-
-    </a>
-
-</td>
                     </td>
 
                 </tr>
@@ -821,7 +784,6 @@ tr:hover {
 
                     endwhile;
 
-
                 else:
 
                 ?>
@@ -829,7 +791,7 @@ tr:hover {
 
                 <tr>
 
-                    <td colspan=7">
+                    <td colspan="6">
 
                         No fee records available.
 

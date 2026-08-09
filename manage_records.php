@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 
 if (!isset($_SESSION['admin_id'])) {
@@ -10,64 +11,116 @@ include 'db.php';
 
 $message = "";
 
+
+/* Add Student Result */
+
 if (isset($_POST['add_result'])) {
 
-    $student_id = $_POST['student_id'];
-    $course_id = $_POST['course_id'];
-    $marks = $_POST['marks'];
-    $semester = $_POST['semester'];
+    $student_id = mysqli_real_escape_string(
+        $conn,
+        $_POST['student_id']
+    );
 
-    // Calculate grade and grade point
+    $course_id = mysqli_real_escape_string(
+        $conn,
+        $_POST['course_id']
+    );
+
+    $marks = mysqli_real_escape_string(
+        $conn,
+        $_POST['marks']
+    );
+
+    $semester = mysqli_real_escape_string(
+        $conn,
+        $_POST['semester']
+    );
+
+
+    /* Calculate Grade */
+
     if ($marks >= 85) {
+
         $grade = "A";
-        $grade_point = 4.00;
+
     } elseif ($marks >= 80) {
+
         $grade = "A-";
-        $grade_point = 3.70;
+
     } elseif ($marks >= 75) {
+
         $grade = "B+";
-        $grade_point = 3.30;
+
     } elseif ($marks >= 70) {
+
         $grade = "B";
-        $grade_point = 3.00;
+
     } elseif ($marks >= 65) {
+
         $grade = "B-";
-        $grade_point = 2.70;
+
     } elseif ($marks >= 60) {
+
         $grade = "C+";
-        $grade_point = 2.30;
+
     } elseif ($marks >= 50) {
+
         $grade = "C";
-        $grade_point = 2.00;
+
     } else {
+
         $grade = "F";
-        $grade_point = 0.00;
+
     }
+
+
+    /*
+     * Insert only the columns
+     * that exist in your results table.
+     */
 
     $sql = "INSERT INTO results
-            (student_id, course_id, marks, grade, grade_point, semester)
+            (student_id, course_id, marks, grade, semester)
             VALUES
-            ('$student_id', '$course_id', '$marks', '$grade',
-             '$grade_point', '$semester')";
+            ('$student_id',
+             '$course_id',
+             '$marks',
+             '$grade',
+             '$semester')";
+
 
     if (mysqli_query($conn, $sql)) {
+
         $message = "Result added successfully!";
+
     } else {
-        $message = "Error: " . mysqli_error($conn);
+
+        $message =
+            "Error: " .
+            mysqli_error($conn);
+
     }
+
 }
+
 ?>
 
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
 
 <meta charset="UTF-8">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport"
+      content="width=device-width,
+               initial-scale=1.0">
 
-<title>Manage Records - Smart College Portal</title>
+<title>
+    Manage Records - Smart College Portal
+</title>
+
 
 <style>
 
@@ -83,6 +136,7 @@ body {
     color: #222;
 }
 
+
 /* Sidebar */
 
 .sidebar {
@@ -93,6 +147,7 @@ body {
     height: 100vh;
     background: #1e1b4b;
     padding: 25px 15px;
+    overflow-y: auto;
 }
 
 .sidebar h2 {
@@ -117,6 +172,7 @@ body {
 .logout-link {
     margin-top: 30px !important;
 }
+
 
 /* Main Content */
 
@@ -143,6 +199,7 @@ body {
     border-radius: 8px;
 }
 
+
 /* Back Button */
 
 .back {
@@ -159,7 +216,8 @@ body {
     background: #5b21b6;
 }
 
-/* Card */
+
+/* Form Card */
 
 .form-card {
     background: white;
@@ -173,6 +231,7 @@ body {
     color: #7c3aed;
     margin-bottom: 20px;
 }
+
 
 /* Form */
 
@@ -210,95 +269,166 @@ button:hover {
     background: #5b21b6;
 }
 
+
+/* Message */
+
 .message {
     margin-bottom: 20px;
     padding: 12px;
     background: #f3e8ff;
     color: #1e1b4b;
     border-radius: 6px;
+    font-weight: bold;
 }
 
 </style>
 
 </head>
 
+
 <body>
+
+
+<!-- Sidebar -->
 
 <div class="sidebar">
 
-    <h2>Smart College</h2>
+    <h2>
+        Smart College
+    </h2>
 
-    <a href="admin_dashboard.php">🏠 Dashboard</a>
 
-    <a href="manage_students.php">👨‍🎓 Manage Students</a>
+    <a href="admin_dashboard.php">
+        🏠 Dashboard
+    </a>
 
-    <a href="manage_courses.php">📚 Manage Courses</a>
 
-    <a href="manage_teachers.php">👨‍🏫 Manage Teachers</a>
+    <a href="manage_students.php">
+        👨‍🎓 Manage Students
+    </a>
 
-    <a href="manage_records.php">📋 Manage Records</a>
-	
-	<a href="admin_manage_fees.php">
-    💰 Manage Fees
-</a>
 
-<a href="admin_manage_announcements.php">
-    📢 Manage Announcements
-</a>
+    <a href="manage_courses.php">
+        📚 Manage Courses
+    </a>
 
-<a href="admin_manage_assignments.php">
-    📄 Manage Assignments
-</a>
-	
-	 <a href="manage_attendance.php">
+
+    <a href="manage_teachers.php">
+        👨‍🏫 Manage Teachers
+    </a>
+
+
+    <a href="manage_records.php">
+        📋 Manage Records
+    </a>
+
+
+    <a href="admin_manage_fees.php">
+        💰 Manage Fees
+    </a>
+
+
+    <a href="admin_manage_announcements.php">
+        📢 Manage Announcements
+    </a>
+
+
+    <a href="admin_manage_assignments.php">
+        📄 Manage Assignments
+    </a>
+
+
+    <a href="manage_attendance.php">
         📊 Manage Attendance
     </a>
-		
-	<a href="teacher_gpa.php">🎓 Teacher GPA Calculator</a>
 
-    <a href="view_results.php">📊 View Results</a>
 
-    <a href="calculate_sgpa.php">📊 Calculate SGPA</a>
-	
-	<a href="calculate_cgpa.php">📈 Calculate CGPA</a>
-	
-	<a href="admin_reports.php">
+    <a href="teacher_gpa.php">
+        🎓 Teacher GPA Calculator
+    </a>
+
+
+    <a href="view_results.php">
+        📋 View Results
+    </a>
+
+
+    <a href="calculate_sgpa.php">
+        📊 Calculate SGPA
+    </a>
+
+
+    <a href="calculate_cgpa.php">
+        📈 Calculate CGPA
+    </a>
+
+
+    <a href="admin_reports.php">
         📊 Reports & Analytics
     </a>
 
-    <a href="admin_logout.php" class="logout-link">
+
+    <a href="admin_logout.php"
+       class="logout-link">
+
         🚪 Logout
+
     </a>
 
 </div>
 
 
+<!-- Main Content -->
+
 <div class="dashboard-content">
+
 
     <div class="top-bar">
 
-        <h1>Manage Records</h1>
+        <h1>
+            Manage Records
+        </h1>
+
 
         <div class="admin-info">
+
             👤 Administrator
+
         </div>
 
     </div>
 
 
-    <a href="admin_dashboard.php" class="back">
+    <a href="admin_dashboard.php"
+       class="back">
+
         ← Back to Dashboard
+
     </a>
 
 
+    <!-- Add Result -->
+
     <div class="form-card">
 
-        <h2>📋 Add Student Result</h2>
+
+        <h2>
+            📋 Add Student Result
+        </h2>
+
 
         <?php if ($message != ""): ?>
 
             <div class="message">
-                <?php echo $message; ?>
+
+                <?php
+
+                echo htmlspecialchars(
+                    $message
+                );
+
+                ?>
+
             </div>
 
         <?php endif; ?>
@@ -306,15 +436,25 @@ button:hover {
 
         <form method="POST">
 
+
+            <!-- Student -->
+
             <div class="form-group">
 
-                <label>Select Student</label>
+                <label>
+                    Select Student
+                </label>
 
-                <select name="student_id" required>
+
+                <select
+                    name="student_id"
+                    required
+                >
 
                     <option value="">
                         Select Student
                     </option>
+
 
                     <?php
 
@@ -323,21 +463,36 @@ button:hover {
                             $conn,
                             "SELECT id, full_name
                              FROM users
+                             WHERE role = 'student'
                              ORDER BY full_name ASC"
                         );
 
-                    while ($student =
-                           mysqli_fetch_assoc($students)):
+
+                    while (
+                        $student =
+                        mysqli_fetch_assoc(
+                            $students
+                        )
+                    ):
 
                     ?>
 
-                    <option value="<?php echo $student['id']; ?>">
+                    <option
+                        value="<?php
+                            echo $student['id'];
+                        ?>"
+                    >
 
                         <?php
-                        echo $student['full_name'];
+
+                        echo htmlspecialchars(
+                            $student['full_name']
+                        );
+
                         ?>
 
                     </option>
+
 
                     <?php endwhile; ?>
 
@@ -346,47 +501,73 @@ button:hover {
             </div>
 
 
+            <!-- Course -->
+
             <div class="form-group">
 
-                <label>Select Course</label>
+                <label>
+                    Select Course
+                </label>
 
-                <select name="course_id" required>
+
+                <select
+                    name="course_id"
+                    required
+                >
 
                     <option value="">
                         Select Course
                     </option>
+
 
                     <?php
 
                     $courses =
                         mysqli_query(
                             $conn,
-                            "SELECT id, course_name,
-							credit_hours
+                            "SELECT
+                                id,
+                                course_name,
+                                credit_hours
                              FROM courses
                              ORDER BY course_name ASC"
                         );
 
-                    while ($course =
-                           mysqli_fetch_assoc($courses)):
+
+                    while (
+                        $course =
+                        mysqli_fetch_assoc(
+                            $courses
+                        )
+                    ):
 
                     ?>
 
-                    <option value="<?php echo $course['id']; ?>">
+                    <option
+                        value="<?php
+                            echo $course['id'];
+                        ?>"
+                    >
 
-    <?php
+                        <?php
 
-    echo $course['course_name'];
+                        echo htmlspecialchars(
+                            $course['course_name']
+                        );
 
-    echo " (";
+                        echo " (";
 
-    echo $course['credit_hours'];
+                        echo $course[
+                            'credit_hours'
+                        ];
 
-    echo " Credit Hours)";
+                        echo " Credit Hours)";
 
-    ?>
+                        ?>
 
-</option>
+                    </option>
+
+
                     <?php endwhile; ?>
 
                 </select>
@@ -394,39 +575,77 @@ button:hover {
             </div>
 
 
+            <!-- Marks -->
+
             <div class="form-group">
 
-                <label>Marks</label>
+                <label>
+                    Marks
+                </label>
+
 
                 <input
                     type="number"
                     name="marks"
                     min="0"
                     max="100"
+                    placeholder="Enter marks"
                     required
                 >
 
             </div>
 
 
+            <!-- Semester -->
+
             <div class="form-group">
 
-                <label>Semester</label>
+                <label>
+                    Semester
+                </label>
 
-                <select name="semester" required>
+
+                <select
+                    name="semester"
+                    required
+                >
 
                     <option value="">
                         Select Semester
                     </option>
 
-                    <option>Semester 1</option>
-                    <option>Semester 2</option>
-                    <option>Semester 3</option>
-                    <option>Semester 4</option>
-                    <option>Semester 5</option>
-                    <option>Semester 6</option>
-                    <option>Semester 7</option>
-                    <option>Semester 8</option>
+
+                    <option>
+                        Semester 1
+                    </option>
+
+                    <option>
+                        Semester 2
+                    </option>
+
+                    <option>
+                        Semester 3
+                    </option>
+
+                    <option>
+                        Semester 4
+                    </option>
+
+                    <option>
+                        Semester 5
+                    </option>
+
+                    <option>
+                        Semester 6
+                    </option>
+
+                    <option>
+                        Semester 7
+                    </option>
+
+                    <option>
+                        Semester 8
+                    </option>
 
                 </select>
 
@@ -437,14 +656,19 @@ button:hover {
                 type="submit"
                 name="add_result"
             >
+
                 Add Result
+
             </button>
+
 
         </form>
 
     </div>
 
+
 </div>
+
 
 </body>
 

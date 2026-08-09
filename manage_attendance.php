@@ -12,107 +12,65 @@ include 'db.php';
 $message = "";
 
 
-/* Add Attendance */
+/* =========================
+   ADD ATTENDANCE
+========================= */
 
 if (isset($_POST['add_attendance'])) {
 
-    $student_id =
-        $_POST['student_id'];
+    $student_id = intval($_POST['student_id']);
+    $course_id = intval($_POST['course_id']);
+    $attendance_percentage = floatval($_POST['attendance_percentage']);
 
-    $course_id =
-        $_POST['course_id'];
+    if ($attendance_percentage < 0 || $attendance_percentage > 100) {
 
-    $total_classes =
-        $_POST['total_classes'];
-
-    $attended_classes =
-        $_POST['attended_classes'];
-
-
-    if (
-        $attended_classes
-        > $total_classes
-    ) {
-
-        $message =
-            "Attended classes cannot be greater than total classes.";
+        $message = "Attendance percentage must be between 0 and 100.";
 
     } else {
 
         $sql = "INSERT INTO attendance
-                (
-                    student_id,
-                    course_id,
-                    total_classes,
-                    attended_classes
-                )
+                (student_id, course_id, attendance_percentage)
                 VALUES
-                (
-                    '$student_id',
-                    '$course_id',
-                    '$total_classes',
-                    '$attended_classes'
-                )";
+                ('$student_id', '$course_id', '$attendance_percentage')";
 
+        if (mysqli_query($conn, $sql)) {
 
-        if (
-            mysqli_query(
-                $conn,
-                $sql
-            )
-        ) {
-
-            $message =
-                "Attendance added successfully!";
+            $message = "Attendance added successfully!";
 
         } else {
 
-            $message =
-                "Error: "
-                . mysqli_error($conn);
+            $message = "Error: " . mysqli_error($conn);
 
         }
-
     }
-
 }
 
 
-/* Get Attendance Records */
+/* =========================
+   GET ATTENDANCE RECORDS
+========================= */
 
-$attendance_query =
-    mysqli_query(
-        $conn,
+$attendance_query = mysqli_query(
+    $conn,
 
-        "SELECT
-            attendance.id,
-            users.full_name,
-            courses.course_name,
-            attendance.total_classes,
-            attendance.attended_classes,
-            (
-                attendance.total_classes
-                -
-                attendance.attended_classes
-            ) AS missed_classes,
+    "SELECT
+        attendance.id,
+        attendance.student_id,
+        attendance.course_id,
+        users.full_name,
+        courses.course_name,
+        attendance.attendance_percentage
 
-            (
-                attendance.attended_classes
-                /
-                attendance.total_classes
-                * 100
-            ) AS percentage
+    FROM attendance
 
-        FROM attendance
-
-        JOIN users
+    JOIN users
         ON attendance.student_id = users.id
 
-        JOIN courses
+    JOIN courses
         ON attendance.course_id = courses.id
 
-        ORDER BY attendance.id DESC"
-    );
+    ORDER BY attendance.id DESC"
+);
 
 ?>
 
@@ -125,374 +83,245 @@ $attendance_query =
 <meta charset="UTF-8">
 
 <meta name="viewport"
-      content="width=device-width,
-               initial-scale=1.0">
+      content="width=device-width, initial-scale=1.0">
 
 <title>
 Manage Attendance - Smart College Portal
 </title>
 
-
 <style>
 
 * {
-
     margin: 0;
-
     padding: 0;
-
     box-sizing: border-box;
-
 }
-
 
 body {
-
-    font-family: Arial,
-                 sans-serif;
-
+    font-family: Arial, sans-serif;
     background: #f3e8ff;
-
     color: #222;
-
 }
 
 
-/* Sidebar */
+/* =========================
+   SIDEBAR
+========================= */
 
 .sidebar {
-
     position: fixed;
-
     left: 0;
-
     top: 0;
-
     width: 240px;
-
     height: 100vh;
-
     background: #1e1b4b;
-
     padding: 25px 15px;
-
+    overflow-y: auto;
 }
-
 
 .sidebar h2 {
-
     color: white;
-
     text-align: center;
-
     margin-bottom: 30px;
-
 }
-
 
 .sidebar a {
-
     display: block;
-
     color: white;
-
     text-decoration: none;
-
     padding: 14px 15px;
-
     margin: 5px 0;
-
     border-radius: 6px;
-
 }
-
 
 .sidebar a:hover {
-
     background: #7c3aed;
-
 }
-
 
 .logout-link {
-
     margin-top: 30px !important;
-
 }
 
 
-/* Main Content */
+/* =========================
+   MAIN CONTENT
+========================= */
 
 .dashboard-content {
-
     margin-left: 240px;
-
     padding: 35px;
-
     min-height: 100vh;
-
     background: #f3e8ff;
-
 }
-
 
 .top-bar {
-
     display: flex;
-
     justify-content: space-between;
-
     align-items: center;
-
 }
-
 
 .top-bar h1 {
-
     color: #1e1b4b;
-
 }
-
 
 .admin-info {
-
     background: white;
-
     padding: 12px 20px;
-
     border-radius: 8px;
-
 }
 
 
-/* Back Button */
+/* =========================
+   BACK BUTTON
+========================= */
 
 .back {
-
     display: inline-block;
-
     margin-top: 25px;
-
     padding: 10px 15px;
-
     background: #7c3aed;
-
     color: white;
-
     text-decoration: none;
-
     border-radius: 6px;
-
 }
-
 
 .back:hover {
-
     background: #5b21b6;
-
 }
 
 
-/* Card */
+/* =========================
+   FORM CARD
+========================= */
 
 .form-card {
-
     background: white;
-
     margin-top: 25px;
-
     padding: 30px;
-
     border-radius: 15px;
-
-    box-shadow:
-        0 4px 15px
-        rgba(0,0,0,0.1);
-
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
-
 
 .form-card h2 {
-
     color: #7c3aed;
-
     margin-bottom: 20px;
-
 }
-
-
-/* Form */
 
 .form-group {
-
     margin-bottom: 18px;
-
 }
-
 
 label {
-
     display: block;
-
     margin-bottom: 7px;
-
     color: #1e1b4b;
-
     font-weight: bold;
-
 }
-
 
 select,
-
 input {
-
     width: 100%;
-
     padding: 12px;
-
     border: 1px solid #ddd;
-
     border-radius: 6px;
-
     font-size: 15px;
-
 }
-
 
 button {
-
     padding: 12px 20px;
-
     background: #7c3aed;
-
     color: white;
-
     border: none;
-
     border-radius: 6px;
-
     cursor: pointer;
-
     font-size: 15px;
-
 }
-
 
 button:hover {
-
     background: #5b21b6;
-
 }
 
+
+/* =========================
+   MESSAGE
+========================= */
 
 .message {
-
     margin-bottom: 20px;
-
     padding: 12px;
-
     background: #f3e8ff;
-
     color: #1e1b4b;
-
     border-radius: 6px;
-
 }
 
 
-/* Table Card */
+/* =========================
+   TABLE
+========================= */
 
 .table-card {
-
     background: white;
-
     margin-top: 25px;
-
     padding: 30px;
-
     border-radius: 15px;
-
-    box-shadow:
-        0 4px 15px
-        rgba(0,0,0,0.1);
-
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
-
 
 .table-card h2 {
-
     color: #7c3aed;
-
     margin-bottom: 20px;
-
 }
-
 
 .table-container {
-
     overflow-x: auto;
-
 }
-
 
 table {
-
     width: 100%;
-
     border-collapse: collapse;
-
 }
-
 
 th,
-
 td {
-
-    padding: 15px;
-
+    padding: 14px;
     text-align: left;
-
     border-bottom: 1px solid #eee;
-
 }
-
 
 th {
-
     background: #f3e8ff;
-
     color: #1e1b4b;
-
 }
 
+td {
+    color: #333;
+}
 
 tr:hover {
-
     background: #f9f7ff;
-
 }
 
 
-/* Responsive */
+/* =========================
+   RESPONSIVE
+========================= */
 
 @media (max-width: 700px) {
 
     .sidebar {
-
         width: 200px;
-
     }
-
 
     .dashboard-content {
-
         margin-left: 200px;
-
         padding: 20px;
-
     }
 
+    th,
+    td {
+        padding: 10px;
+        font-size: 13px;
+    }
 }
 
 </style>
@@ -503,7 +332,9 @@ tr:hover {
 <body>
 
 
-<!-- Sidebar -->
+<!-- =========================
+     SIDEBAR
+========================= -->
 
 <div class="sidebar">
 
@@ -535,18 +366,22 @@ tr:hover {
     <a href="manage_records.php">
         📋 Manage Records
     </a>
-	
-	<a href="admin_manage_fees.php">
-    💰 Manage Fees
-</a>
 
-<a href="admin_manage_announcements.php">
-    📢 Manage Announcements
-</a>
 
-<a href="admin_manage_assignments.php">
-    📄 Manage Assignments
-</a>
+    <a href="admin_manage_fees.php">
+        💰 Manage Fees
+    </a>
+
+
+    <a href="admin_manage_announcements.php">
+        📢 Manage Announcements
+    </a>
+
+
+    <a href="admin_manage_assignments.php">
+        📄 Manage Assignments
+    </a>
+
 
     <a href="manage_attendance.php">
         📊 Manage Attendance
@@ -588,7 +423,9 @@ tr:hover {
 </div>
 
 
-<!-- Main Content -->
+<!-- =========================
+     MAIN CONTENT
+========================= -->
 
 <div class="dashboard-content">
 
@@ -617,7 +454,9 @@ tr:hover {
     </a>
 
 
-    <!-- Add Attendance -->
+    <!-- =========================
+         ADD ATTENDANCE
+    ========================= -->
 
     <div class="form-card">
 
@@ -626,27 +465,15 @@ tr:hover {
         </h2>
 
 
-        <?php
-
-        if ($message != ""):
-
-        ?>
+        <?php if ($message != ""): ?>
 
             <div class="message">
 
-                <?php
-
-                echo $message;
-
-                ?>
+                <?php echo htmlspecialchars($message); ?>
 
             </div>
 
-        <?php
-
-        endif;
-
-        ?>
+        <?php endif; ?>
 
 
         <form method="POST">
@@ -673,58 +500,37 @@ tr:hover {
 
                     <?php
 
-                    $students =
-                        mysqli_query(
+                    $students = mysqli_query(
+                        $conn,
 
-                            $conn,
-
-                            "SELECT
-                                id,
-                                full_name
-
-                             FROM users
-
-                             WHERE role = 'student'
-
-                             ORDER BY
-                                full_name ASC"
-
-                        );
+                        "SELECT id, full_name
+                         FROM users
+                         WHERE role = 'student'
+                         ORDER BY full_name ASC"
+                    );
 
 
                     while (
-
-                        $student =
-                        mysqli_fetch_assoc(
-                            $students
-                        )
-
+                        $student = mysqli_fetch_assoc($students)
                     ):
 
                     ?>
 
-                    <option
-                        value="<?php
-                            echo $student['id'];
-                        ?>"
-                    >
+                        <option
+                            value="<?php echo $student['id']; ?>"
+                        >
 
-                        <?php
+                            <?php
 
-                        echo htmlspecialchars(
-                            $student['full_name']
-                        );
+                            echo htmlspecialchars(
+                                $student['full_name']
+                            );
 
-                        ?>
+                            ?>
 
-                    </option>
+                        </option>
 
-
-                    <?php
-
-                    endwhile;
-
-                    ?>
+                    <?php endwhile; ?>
 
                 </select>
 
@@ -752,94 +558,58 @@ tr:hover {
 
                     <?php
 
-                    $courses =
-                        mysqli_query(
+                    $courses = mysqli_query(
+                        $conn,
 
-                            $conn,
-
-                            "SELECT
-                                id,
-                                course_name
-
-                             FROM courses
-
-                             ORDER BY
-                                course_name ASC"
-
-                        );
+                        "SELECT id, course_name
+                         FROM courses
+                         ORDER BY course_name ASC"
+                    );
 
 
                     while (
-
-                        $course =
-                        mysqli_fetch_assoc(
-                            $courses
-                        )
-
+                        $course = mysqli_fetch_assoc($courses)
                     ):
 
                     ?>
 
-                    <option
-                        value="<?php
-                            echo $course['id'];
-                        ?>"
-                    >
+                        <option
+                            value="<?php echo $course['id']; ?>"
+                        >
 
-                        <?php
+                            <?php
 
-                        echo htmlspecialchars(
-                            $course['course_name']
-                        );
+                            echo htmlspecialchars(
+                                $course['course_name']
+                            );
 
-                        ?>
+                            ?>
 
-                    </option>
+                        </option>
 
-
-                    <?php
-
-                    endwhile;
-
-                    ?>
+                    <?php endwhile; ?>
 
                 </select>
 
             </div>
 
 
-            <!-- Total Classes -->
+            <!-- Attendance Percentage -->
 
             <div class="form-group">
 
                 <label>
-                    Total Classes
+                    Attendance Percentage (%)
                 </label>
 
 
                 <input
                     type="number"
-                    name="total_classes"
-                    min="1"
-                    required
-                >
-
-            </div>
-
-
-            <!-- Attended Classes -->
-
-            <div class="form-group">
-
-                <label>
-                    Classes Attended
-                </label>
-
-
-                <input
-                    type="number"
-                    name="attended_classes"
+                    name="attendance_percentage"
                     min="0"
+                    max="100"
+                    step="0.01"
+                    placeholder="Enter attendance percentage"
                     required
                 >
 
@@ -860,7 +630,9 @@ tr:hover {
     </div>
 
 
-    <!-- Attendance Records -->
+    <!-- =========================
+         ATTENDANCE RECORDS
+    ========================= -->
 
     <div class="table-card">
 
@@ -873,36 +645,26 @@ tr:hover {
 
             <table>
 
-
                 <tr>
+
+                    <th>
+                        Student ID
+                    </th>
 
                     <th>
                         Student
                     </th>
 
+                    <th>
+                        Course ID
+                    </th>
 
                     <th>
                         Course
                     </th>
 
-
                     <th>
-                        Total Classes
-                    </th>
-
-
-                    <th>
-                        Attended
-                    </th>
-
-
-                    <th>
-                        Missed
-                    </th>
-
-
-                    <th>
-                        Percentage
+                        Attendance Percentage
                     </th>
 
                 </tr>
@@ -911,141 +673,89 @@ tr:hover {
                 <?php
 
                 if (
-
                     mysqli_num_rows(
                         $attendance_query
                     ) > 0
-
                 ):
 
                     while (
-
                         $row =
                         mysqli_fetch_assoc(
                             $attendance_query
                         )
-
                     ):
 
                 ?>
 
+                    <tr>
 
-                <tr>
-
-                    <td>
-
-                        <?php
-
-                        echo htmlspecialchars(
-                            $row['full_name']
-                        );
-
-                        ?>
-
-                    </td>
+                        <td>
+                            <?php
+                            echo $row['student_id'];
+                            ?>
+                        </td>
 
 
-                    <td>
-
-                        <?php
-
-                        echo htmlspecialchars(
-                            $row['course_name']
-                        );
-
-                        ?>
-
-                    </td>
+                        <td>
+                            <?php
+                            echo htmlspecialchars(
+                                $row['full_name']
+                            );
+                            ?>
+                        </td>
 
 
-                    <td>
-
-                        <?php
-
-                        echo $row[
-                            'total_classes'
-                        ];
-
-                        ?>
-
-                    </td>
+                        <td>
+                            <?php
+                            echo $row['course_id'];
+                            ?>
+                        </td>
 
 
-                    <td>
-
-                        <?php
-
-                        echo $row[
-                            'attended_classes'
-                        ];
-
-                        ?>
-
-                    </td>
+                        <td>
+                            <?php
+                            echo htmlspecialchars(
+                                $row['course_name']
+                            );
+                            ?>
+                        </td>
 
 
-                    <td>
+                        <td>
 
-                        <?php
+                            <?php
 
-                        echo $row[
-                            'missed_classes'
-                        ];
+                            echo number_format(
+                                $row['attendance_percentage'],
+                                2
+                            );
 
-                        ?>
+                            ?>%
 
-                    </td>
+                        </td>
 
-
-                    <td>
-
-                        <?php
-
-                        echo number_format(
-
-                            $row[
-                                'percentage'
-                            ],
-
-                            2
-
-                        );
-
-                        ?>%
-
-                    </td>
-
-                </tr>
-
+                    </tr>
 
                 <?php
 
                     endwhile;
 
-
                 else:
 
                 ?>
 
+                    <tr>
 
-                <tr>
+                        <td colspan="5">
 
-                    <td colspan="6">
+                            No attendance records
+                            available yet.
 
-                        No attendance records
-                        available yet.
+                        </td>
 
-                    </td>
+                    </tr>
 
-                </tr>
-
-
-                <?php
-
-                endif;
-
-                ?>
-
+                <?php endif; ?>
 
             </table>
 

@@ -12,52 +12,403 @@ include 'db.php';
 $full_name = $_SESSION['full_name'];
 
 
-/* Get Courses */
+/* =========================
+   GET ALL COURSES
+   WITH ASSIGNED TEACHER
+========================= */
 
 $sql = "SELECT
-            id,
-            course_name,
-            description,
-            created_at
+            courses.id,
+            courses.course_name,
+            courses.course_code,
+            courses.credit_hours,
+
+            teachers.name AS teacher_name,
+            teachers.email AS teacher_email,
+            teachers.phone AS teacher_phone
 
         FROM courses
 
-        ORDER BY course_name ASC";
+        LEFT JOIN teachers
+        ON courses.id = teachers.course_id
+
+        ORDER BY courses.course_name ASC";
 
 
-$result = mysqli_query(
-    $conn,
-    $sql
-);
+$result = mysqli_query($conn, $sql);
 
 ?>
 
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
 
     <meta charset="UTF-8">
 
-    <meta name="viewport"
-          content="width=device-width,
-                   initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width,
+                 initial-scale=1.0"
+    >
 
     <title>
         Courses - Smart College Portal
     </title>
 
-    <link rel="stylesheet"
-          href="style.css">
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+
+        body {
+
+            font-family: Arial, sans-serif;
+
+            background: #f3e8ff;
+
+            color: #222;
+
+        }
+
+
+        /* =========================
+           SIDEBAR
+        ========================= */
+
+        .sidebar {
+
+            position: fixed;
+
+            left: 0;
+
+            top: 0;
+
+            width: 240px;
+
+            height: 100vh;
+
+            background: #1e1b4b;
+
+            padding: 20px 15px;
+
+            overflow-y: auto;
+
+        }
+
+
+        .sidebar h2 {
+
+            color: white;
+
+            text-align: center;
+
+            margin-bottom: 25px;
+
+        }
+
+
+        .sidebar a {
+
+            display: block;
+
+            color: white;
+
+            text-decoration: none;
+
+            padding: 12px 15px;
+
+            margin: 5px 0;
+
+            border-radius: 6px;
+
+        }
+
+
+        .sidebar a:hover {
+
+            background: #7c3aed;
+
+        }
+
+
+        .logout-link {
+
+            margin-top: 25px !important;
+
+        }
+
+
+        /* =========================
+           MAIN CONTENT
+        ========================= */
+
+        .dashboard-content {
+
+            margin-left: 240px;
+
+            padding: 35px;
+
+            min-height: 100vh;
+
+            background: #f3e8ff;
+
+        }
+
+
+        .top-bar {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+        }
+
+
+        .top-bar h1 {
+
+            color: #1e1b4b;
+
+        }
+
+
+        .student-info {
+
+            background: white;
+
+            padding: 12px 20px;
+
+            border-radius: 8px;
+
+        }
+
+
+        /* =========================
+           COURSES CONTAINER
+        ========================= */
+
+        .courses-container {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(280px, 1fr)
+                );
+
+            gap: 25px;
+
+            margin-top: 30px;
+
+        }
+
+
+        /* =========================
+           COURSE CARD
+        ========================= */
+
+        .course-card {
+
+            background: white;
+
+            padding: 25px;
+
+            border-radius: 15px;
+
+            box-shadow:
+                0 4px 15px
+                rgba(0,0,0,0.1);
+
+            transition: 0.2s;
+
+        }
+
+
+        .course-card:hover {
+
+            transform: translateY(-3px);
+
+            box-shadow:
+                0 7px 20px
+                rgba(0,0,0,0.15);
+
+        }
+
+
+        .course-card h2 {
+
+            color: #7c3aed;
+
+            margin-bottom: 18px;
+
+            font-size: 21px;
+
+        }
+
+
+        .course-card p {
+
+            margin-bottom: 10px;
+
+            color: #333;
+
+            line-height: 1.5;
+
+        }
+
+
+        .course-card strong {
+
+            color: #1e1b4b;
+
+        }
+
+
+        /* =========================
+           TEACHER BOX
+        ========================= */
+
+        .teacher-box {
+
+            margin-top: 20px;
+
+            padding: 15px;
+
+            background: #f3e8ff;
+
+            border-radius: 10px;
+
+            border-left: 4px solid #7c3aed;
+
+        }
+
+
+        .teacher-box h3 {
+
+            color: #7c3aed;
+
+            margin-bottom: 10px;
+
+            font-size: 17px;
+
+        }
+
+
+        .teacher-box p {
+
+            margin-bottom: 6px;
+
+            font-size: 14px;
+
+        }
+
+
+        .not-assigned {
+
+            margin-top: 20px;
+
+            padding: 12px;
+
+            background: #f8f8f8;
+
+            border-radius: 8px;
+
+            color: #777;
+
+            font-size: 14px;
+
+        }
+
+
+        /* =========================
+           NO COURSES
+        ========================= */
+
+        .no-courses {
+
+            background: white;
+
+            padding: 30px;
+
+            border-radius: 12px;
+
+            text-align: center;
+
+            color: #666;
+
+            box-shadow:
+                0 4px 15px
+                rgba(0,0,0,0.1);
+
+            grid-column: 1 / -1;
+
+        }
+
+
+        /* =========================
+           RESPONSIVE
+        ========================= */
+
+        @media (max-width: 700px) {
+
+            .sidebar {
+
+                width: 200px;
+
+            }
+
+
+            .dashboard-content {
+
+                margin-left: 200px;
+
+                padding: 20px;
+
+            }
+
+
+            .top-bar {
+
+                flex-direction: column;
+
+                align-items: flex-start;
+
+                gap: 15px;
+
+            }
+
+
+            .courses-container {
+
+                grid-template-columns: 1fr;
+
+            }
+
+        }
+
+    </style>
 
 </head>
+
 
 <body>
 
 
-<!-- Sidebar -->
+<!-- =========================
+     SIDEBAR
+========================= -->
 
 <div class="sidebar">
+
 
     <h2>
         🎓 Smart Portal
@@ -87,11 +438,10 @@ $result = mysqli_query(
     <a href="results.php">
         📝 Results
     </a>
-	
-	<a href="student_reports.php">
 
+
+    <a href="student_reports.php">
         📈 My Reports & Analytics
-
     </a>
 
 
@@ -110,22 +460,29 @@ $result = mysqli_query(
     </a>
 
 
-    <a href="logout.php"
-       class="logout-link">
+    <a
+        href="logout.php"
+        class="logout-link"
+    >
 
         🚪 Logout
 
     </a>
 
+
 </div>
 
 
-<!-- Main Content -->
+
+<!-- =========================
+     MAIN CONTENT
+========================= -->
 
 <div class="dashboard-content">
 
 
     <div class="top-bar">
+
 
         <h1>
             Available Courses
@@ -150,31 +507,31 @@ $result = mysqli_query(
 
         </div>
 
+
     </div>
 
 
-    <!-- Courses Section -->
+
+    <!-- =========================
+         COURSES
+    ========================= -->
 
     <div class="courses-container">
 
 
         <?php
 
+
         if (
-            mysqli_num_rows(
-                $result
-            ) > 0
+            $result &&
+            mysqli_num_rows($result) > 0
         ) {
 
 
             while (
-
                 $course =
-                mysqli_fetch_assoc(
-                    $result
-                )
-
-            ):
+                mysqli_fetch_assoc($result)
+            ) {
 
 
         ?>
@@ -190,9 +547,7 @@ $result = mysqli_query(
                     <?php
 
                     echo htmlspecialchars(
-                        $course[
-                            'course_name'
-                        ]
+                        $course['course_name']
                     );
 
                     ?>
@@ -200,14 +555,17 @@ $result = mysqli_query(
                 </h2>
 
 
+
                 <p>
+
+                    <strong>
+                        Course Code:
+                    </strong>
 
                     <?php
 
                     echo htmlspecialchars(
-                        $course[
-                            'description'
-                        ]
+                        $course['course_code']
                     );
 
                     ?>
@@ -215,21 +573,128 @@ $result = mysqli_query(
                 </p>
 
 
-                <small>
 
-                    Added on:
+                <p>
+
+                    <strong>
+                        Credit Hours:
+                    </strong>
 
                     <?php
 
                     echo htmlspecialchars(
-                        $course[
-                            'created_at'
-                        ]
+                        $course['credit_hours']
                     );
 
                     ?>
 
-                </small>
+                </p>
+
+
+
+                <!-- TEACHER -->
+
+                <?php
+
+
+                if (
+                    !empty(
+                        $course['teacher_name']
+                    )
+                ) {
+
+
+                ?>
+
+
+                    <div class="teacher-box">
+
+
+                        <h3>
+                            👨‍🏫 Course Teacher
+                        </h3>
+
+
+                        <p>
+
+                            <strong>
+                                Name:
+                            </strong>
+
+                            <?php
+
+                            echo htmlspecialchars(
+                                $course['teacher_name']
+                            );
+
+                            ?>
+
+                        </p>
+
+
+                        <p>
+
+                            <strong>
+                                Email:
+                            </strong>
+
+                            <?php
+
+                            echo htmlspecialchars(
+                                $course['teacher_email']
+                            );
+
+                            ?>
+
+                        </p>
+
+
+                        <p>
+
+                            <strong>
+                                Phone:
+                            </strong>
+
+                            <?php
+
+                            echo htmlspecialchars(
+                                $course['teacher_phone']
+                            );
+
+                            ?>
+
+                        </p>
+
+
+                    </div>
+
+
+                <?php
+
+
+                } else {
+
+
+                ?>
+
+
+                    <div class="not-assigned">
+
+                        👨‍🏫
+
+                        No teacher assigned
+                        to this course yet.
+
+                    </div>
+
+
+                <?php
+
+
+                }
+
+
+                ?>
 
 
             </div>
@@ -237,7 +702,8 @@ $result = mysqli_query(
 
         <?php
 
-            endwhile;
+
+            }
 
 
         } else {
@@ -248,6 +714,8 @@ $result = mysqli_query(
 
             <div class="no-courses">
 
+                📚
+
                 No courses available yet.
 
             </div>
@@ -255,7 +723,9 @@ $result = mysqli_query(
 
         <?php
 
+
         }
+
 
         ?>
 

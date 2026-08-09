@@ -7,68 +7,58 @@ if (!isset($_SESSION['admin_id'])) {
     exit();
 }
 
-include 'db.php';
+include "db.php";
 
 
 /* Add Course */
 
 if (isset($_POST['add_course'])) {
 
-    $course_name =
-        mysqli_real_escape_string(
-            $conn,
-            $_POST['course_name']
-        );
-
-    $description =
-        mysqli_real_escape_string(
-            $conn,
-            $_POST['description']
-        );
-		
-		$credit_hours =
-    mysqli_real_escape_string(
+    $course_name = mysqli_real_escape_string(
         $conn,
-        $_POST['credit_hours']
+        $_POST['course_name']
     );
 
-$insert_sql = "INSERT INTO courses
-               (course_name, description, credit_hours)
-               VALUES
-               ('$course_name', '$description', '$credit_hours')";
-    
+    $course_code = mysqli_real_escape_string(
+        $conn,
+        $_POST['course_code']
+    );
 
-    if (mysqli_query($conn, $insert_sql)) {
+    $credit_hours = (int) $_POST['credit_hours'];
 
-        header(
-            "Location: manage_courses.php"
-        );
 
+    $sql = "INSERT INTO courses
+            (course_name, course_code, credit_hours)
+            VALUES
+            ('$course_name', '$course_code', '$credit_hours')";
+
+
+    if (mysqli_query($conn, $sql)) {
+
+        header("Location: manage_courses.php");
         exit();
 
     } else {
 
-        echo "Error: "
-             . mysqli_error($conn);
+        $error = mysqli_error($conn);
 
     }
 
 }
 
 
-/* Display Courses */
+/* Get Courses */
 
-$sql =
-    "SELECT *
-     FROM courses
-     ORDER BY id DESC";
+$sql = "SELECT
+            id,
+            course_name,
+            course_code,
+            credit_hours
+        FROM courses
+        ORDER BY id DESC";
 
 
-$result =
-    mysqli_query(
-        $conn,
-        $sql
-    );
+$result = mysqli_query($conn, $sql);
 
 ?>
 
@@ -80,13 +70,11 @@ $result =
 <meta charset="UTF-8">
 
 <meta name="viewport"
-content="width=device-width,
-initial-scale=1.0">
+      content="width=device-width, initial-scale=1.0">
 
 <title>
 Manage Courses - Smart College Portal
 </title>
-
 
 <style>
 
@@ -113,6 +101,7 @@ body {
     height: 100vh;
     background: #1e1b4b;
     padding: 25px 15px;
+    overflow-y: auto;
 }
 
 .sidebar h2 {
@@ -139,7 +128,7 @@ body {
 }
 
 
-/* Main Content */
+/* Main */
 
 .dashboard-content {
     margin-left: 240px;
@@ -165,7 +154,7 @@ body {
 }
 
 
-/* Back Button */
+/* Back */
 
 .back {
     display: inline-block;
@@ -182,9 +171,10 @@ body {
 }
 
 
-/* Add Course Card */
+/* Cards */
 
-.add-course-card {
+.add-course-card,
+.courses-card {
     background: white;
     margin-top: 25px;
     padding: 30px;
@@ -192,24 +182,22 @@ body {
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
-.add-course-card h2 {
+.add-course-card h2,
+.courses-card h2 {
     color: #7c3aed;
     margin-bottom: 20px;
 }
 
-.add-course-card input,
-.add-course-card textarea {
+
+/* Form */
+
+.add-course-card input {
     width: 100%;
     padding: 12px;
     margin-bottom: 15px;
     border: 1px solid #ddd;
     border-radius: 6px;
     font-size: 15px;
-}
-
-.add-course-card textarea {
-    height: 100px;
-    resize: vertical;
 }
 
 .add-course-card button {
@@ -227,22 +215,6 @@ body {
 }
 
 
-/* Courses Card */
-
-.courses-card {
-    background: white;
-    margin-top: 25px;
-    padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-.courses-card h2 {
-    color: #7c3aed;
-    margin-bottom: 20px;
-}
-
-
 /* Table */
 
 .table-container {
@@ -252,7 +224,6 @@ body {
 table {
     width: 100%;
     border-collapse: collapse;
-    background: white;
 }
 
 th,
@@ -269,11 +240,21 @@ th {
 
 td {
     background: white;
-    color: #333;
 }
 
 tr:hover td {
     background: #f9f7ff;
+}
+
+
+/* Error */
+
+.error {
+    margin-top: 15px;
+    padding: 12px;
+    background: #fee2e2;
+    color: #991b1b;
+    border-radius: 6px;
 }
 
 
@@ -338,20 +319,24 @@ tr:hover td {
     <a href="manage_records.php">
         📋 Manage Records
     </a>
-	
-	<a href="admin_manage_fees.php">
-    💰 Manage Fees
-</a>
 
-<a href="admin_manage_announcements.php">
-    📢 Manage Announcements
-</a>
 
-<a href="admin_manage_assignments.php">
-    📄 Manage Assignments
-</a>
-	
-	 <a href="manage_attendance.php">
+    <a href="admin_manage_fees.php">
+        💰 Manage Fees
+    </a>
+
+
+    <a href="admin_manage_announcements.php">
+        📢 Manage Announcements
+    </a>
+
+
+    <a href="admin_manage_assignments.php">
+        📄 Manage Assignments
+    </a>
+
+
+    <a href="manage_attendance.php">
         📊 Manage Attendance
     </a>
 
@@ -404,9 +389,7 @@ tr:hover td {
 
 
         <div class="admin-info">
-
             👤 Administrator
-
         </div>
 
     </div>
@@ -418,6 +401,17 @@ tr:hover td {
         ← Back to Dashboard
 
     </a>
+
+
+    <?php if (isset($error)) { ?>
+
+        <div class="error">
+
+            <?php echo htmlspecialchars($error); ?>
+
+        </div>
+
+    <?php } ?>
 
 
     <!-- Add Course -->
@@ -440,20 +434,22 @@ tr:hover td {
             >
 
 
-            <textarea
-                name="description"
-                placeholder="Enter Course Description"
+            <input
+                type="text"
+                name="course_code"
+                placeholder="Enter Course Code"
                 required
-            ></textarea>
-			
-			<input
-    type="number"
-    name="credit_hours"
-    placeholder="Enter Credit Hours"
-    min="1"
-    max="6"
-    required
->
+            >
+
+
+            <input
+                type="number"
+                name="credit_hours"
+                placeholder="Enter Credit Hours"
+                min="1"
+                max="6"
+                required
+            >
 
 
             <button
@@ -464,13 +460,12 @@ tr:hover td {
 
             </button>
 
-
         </form>
 
     </div>
 
 
-    <!-- Available Courses -->
+    <!-- Courses -->
 
     <div class="courses-card">
 
@@ -483,138 +478,109 @@ tr:hover td {
 
             <table>
 
+                <thead>
 
-                <tr>
+                    <tr>
 
-                    <th>
-                        ID
-                    </th>
+                        <th>
+                            ID
+                        </th>
 
-                    <th>
-                        Course Name
-                    </th>
+                        <th>
+                            Course Name
+                        </th>
 
-                    <th>
-                        Description
-                    </th>
-					
-					<th>
-                       Credit Hours
-                    </th>
+                        <th>
+                            Course Code
+                        </th>
 
-                    <th>
-                        Created Date
-                    </th>
+                        <th>
+                            Credit Hours
+                        </th>
 
-                </tr>
+                    </tr>
 
+                </thead>
+
+
+                <tbody>
 
                 <?php
 
                 if (
-                    mysqli_num_rows(
-                        $result
-                    ) > 0
+                    $result &&
+                    mysqli_num_rows($result) > 0
                 ) {
-
 
                     while (
                         $course =
-                        mysqli_fetch_assoc(
-                            $result
-                        )
+                        mysqli_fetch_assoc($result)
                     ) {
 
                 ?>
 
+                    <tr>
 
-                <tr>
-
-                    <td>
-
-                        <?php
-
-                        echo $course['id'];
-
-                        ?>
-
-                    </td>
+                        <td>
+                            <?php
+                            echo htmlspecialchars(
+                                $course['id']
+                            );
+                            ?>
+                        </td>
 
 
-                    <td>
-
-                        <?php
-
-                        echo
-                        $course['course_name'];
-
-                        ?>
-
-                    </td>
+                        <td>
+                            <?php
+                            echo htmlspecialchars(
+                                $course['course_name']
+                            );
+                            ?>
+                        </td>
 
 
-                    <td>
-
-                        <?php
-
-                        echo
-                        $course['description'];
-
-                        ?>
-
-                    </td>
-					
-					<td>
-
-                        <?php
-
-                          echo $course['credit_hours'];
-
-                          ?>
-
-                     </td>
+                        <td>
+                            <?php
+                            echo htmlspecialchars(
+                                $course['course_code']
+                            );
+                            ?>
+                        </td>
 
 
-                    <td>
+                        <td>
+                            <?php
+                            echo htmlspecialchars(
+                                $course['credit_hours']
+                            );
+                            ?>
+                        </td>
 
-                        <?php
-
-                        echo
-                        $course['created_at'];
-
-                        ?>
-
-                    </td>
-
-                </tr>
-
+                    </tr>
 
                 <?php
 
                     }
 
-
                 } else {
 
-
-                    echo "
+                ?>
 
                     <tr>
 
-                        <td colspan='5'>
-
+                        <td colspan="4">
                             No courses available.
-
                         </td>
 
                     </tr>
 
-                    ";
+                <?php
 
                 }
 
                 ?>
 
+                </tbody>
 
             </table>
 
@@ -624,7 +590,6 @@ tr:hover td {
 
 
 </div>
-
 
 </body>
 

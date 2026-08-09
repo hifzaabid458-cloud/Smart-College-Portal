@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 
 if (!isset($_SESSION['admin_id'])) {
@@ -6,7 +7,6 @@ if (!isset($_SESSION['admin_id'])) {
     exit();
 }
 
-include 'db.php';
 ?>
 
 <!DOCTYPE html>
@@ -15,7 +15,9 @@ include 'db.php';
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
 
 <title>Teacher GPA Calculator - Smart College Portal</title>
 
@@ -33,6 +35,7 @@ body {
     color: #222;
 }
 
+
 /* Sidebar */
 
 .sidebar {
@@ -43,6 +46,7 @@ body {
     height: 100vh;
     background: #1e1b4b;
     padding: 25px 15px;
+    overflow-y: auto;
 }
 
 .sidebar h2 {
@@ -67,6 +71,7 @@ body {
 .logout-link {
     margin-top: 30px !important;
 }
+
 
 /* Main Content */
 
@@ -93,6 +98,7 @@ body {
     border-radius: 8px;
 }
 
+
 /* Back Button */
 
 .back {
@@ -109,6 +115,7 @@ body {
     background: #5b21b6;
 }
 
+
 /* GPA Card */
 
 .gpa-card {
@@ -124,7 +131,12 @@ body {
     margin-bottom: 20px;
 }
 
-/* GPA Table */
+
+/* Table */
+
+.table-container {
+    overflow-x: auto;
+}
 
 table {
     width: 100%;
@@ -135,7 +147,7 @@ th,
 td {
     padding: 15px;
     text-align: left;
-    border-bottom: 1px solid #eee;
+    border: 1px solid #e5d5f7;
 }
 
 th {
@@ -143,13 +155,6 @@ th {
     color: #1e1b4b;
 }
 
-td {
-    color: #333;
-}
-
-tr:hover {
-    background: #f9f7ff;
-}
 
 /* Inputs */
 
@@ -160,10 +165,12 @@ input {
     border-radius: 6px;
 }
 
+
 /* Buttons */
 
 button {
     margin-top: 20px;
+    margin-right: 10px;
     padding: 10px 15px;
     background: #7c3aed;
     color: white;
@@ -176,6 +183,7 @@ button:hover {
     background: #5b21b6;
 }
 
+
 /* Result */
 
 #result {
@@ -186,6 +194,7 @@ button:hover {
     border-radius: 6px;
     font-weight: bold;
 }
+
 
 /* Responsive */
 
@@ -212,55 +221,42 @@ button:hover {
 
 </head>
 
+
 <body>
+
 
 <!-- Sidebar -->
 
 <div class="sidebar">
 
-    <h2>Smart College</h2>
+    <h2>
+        Smart College
+    </h2>
 
-    <a href="admin_dashboard.php">🏠 Dashboard</a>
 
-    <a href="manage_students.php">👨‍🎓 Manage Students</a>
-
-    <a href="manage_courses.php">📚 Manage Courses</a>
-
-    <a href="manage_teachers.php">👨‍🏫 Manage Teachers</a>
-
-    <a href="manage_records.php">📋 Manage Records</a>
-	
-	<a href="admin_manage_fees.php">
-    💰 Manage Fees
-</a>
-
-<a href="admin_manage_announcements.php">
-    📢 Manage Announcements
-</a>
-
-<a href="admin_manage_assignments.php">
-    📄 Manage Assignments
-</a>
-	
-	 <a href="manage_attendance.php">
-        📊 Manage Attendance
-    </a>
-		  
-    <a href="teacher_gpa.php">🎓 Teacher GPA Calculator</a>
-	
-	<a href="view_results.php">📊 View Results</a>
-
-    <a href="calculate_sgpa.php">📊 Calculate SGPA</a>
-	
-	<a href="calculate_cgpa.php">📈 Calculate CGPA</a>
-	
-	<a href="admin_reports.php">
-        📊 Reports & Analytics
+    <a href="admin_dashboard.php">
+        🏠 Dashboard
     </a>
 
 
-    <a href="admin_logout.php" class="logout-link">
+    <a href="manage_students.php">
+        👨‍🎓 Manage Students
+    </a>
+
+
+    <a href="manage_courses.php">
+        📚 Manage Courses
+    </a>
+
+    
+    <a href="teacher_gpa.php">
+        🎓 Teacher GPA Calculator
+    </a>
+
+
+   
         🚪 Logout
+
     </a>
 
 </div>
@@ -270,95 +266,129 @@ button:hover {
 
 <div class="dashboard-content">
 
+
     <div class="top-bar">
 
-        <h1>Teacher GPA Calculator</h1>
+        <h1>
+            Teacher GPA Calculator
+        </h1>
+
 
         <div class="admin-info">
+
             👤 Administrator
+
         </div>
 
     </div>
 
 
-    <a href="admin_dashboard.php" class="back">
+    <a href="admin_dashboard.php"
+       class="back">
+
         ← Back to Dashboard
+
     </a>
 
 
     <div class="gpa-card">
 
-        <h2>🎓 Teacher GPA Calculator</h2>
+
+        <h2>
+            🎓 Calculate GPA
+        </h2>
 
 
-        <table id="gpaTable">
+        <div class="table-container">
 
-            <tr>
+            <table id="gpaTable">
 
-                <th>Course Name</th>
+                <thead>
 
-                <th>Credit Hours</th>
+                    <tr>
 
-                <th>Grade Point</th>
+                        <th>
+                            Course Name
+                        </th>
 
-            </tr>
+                        <th>
+                            Credit Hours
+                        </th>
 
+                        <th>
+                            Grade Point
+                        </th>
 
-            <tr>
+                    </tr>
 
-                <td>
-
-                    <input
-                        type="text"
-                        class="course"
-                        placeholder="Course Name"
-                    >
-
-                </td>
-
-
-                <td>
-
-                    <input
-                        type="number"
-                        class="credit"
-                        min="1"
-                        max="6"
-                    >
-
-                </td>
+                </thead>
 
 
-                <td>
+                <tbody>
 
-                    <input
-                        type="number"
-                        class="grade"
-                        min="0"
-                        max="4"
-                        step="0.01"
-                    >
+                    <tr>
 
-                </td>
+                        <td>
 
-            </tr>
+                            <input
+                                type="text"
+                                class="course"
+                                placeholder="Course Name"
+                            >
 
-        </table>
+                        </td>
+
+
+                        <td>
+
+                            <input
+                                type="number"
+                                class="credit"
+                                min="1"
+                                max="6"
+                                placeholder="3"
+                            >
+
+                        </td>
+
+
+                        <td>
+
+                            <input
+                                type="number"
+                                class="grade"
+                                min="0"
+                                max="4"
+                                step="0.01"
+                                placeholder="4.00"
+                            >
+
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
 
 
         <button onclick="addCourse()">
-            Add Course
+            ➕ Add Course
         </button>
 
 
         <button onclick="calculateGPA()">
-            Calculate GPA
+            🎓 Calculate GPA
         </button>
 
 
         <div id="result"></div>
 
+
     </div>
+
 
 </div>
 
@@ -368,10 +398,14 @@ button:hover {
 function addCourse() {
 
     let table =
-        document.getElementById("gpaTable");
+        document
+        .getElementById("gpaTable")
+        .getElementsByTagName("tbody")[0];
+
 
     let row =
-        table.insertRow(-1);
+        table.insertRow();
+
 
     row.innerHTML = `
 
@@ -392,6 +426,7 @@ function addCourse() {
                 class="credit"
                 min="1"
                 max="6"
+                placeholder="3"
             >
 
         </td>
@@ -404,6 +439,7 @@ function addCourse() {
                 min="0"
                 max="4"
                 step="0.01"
+                placeholder="4.00"
             >
 
         </td>
@@ -434,10 +470,14 @@ function calculateGPA() {
     ) {
 
         let credit =
-            parseFloat(credits[i].value);
+            parseFloat(
+                credits[i].value
+            );
 
         let grade =
-            parseFloat(grades[i].value);
+            parseFloat(
+                grades[i].value
+            );
 
 
         if (
@@ -446,7 +486,22 @@ function calculateGPA() {
         ) {
 
             alert(
-                "Please fill all Credit Hours and Grade Points."
+                "Please enter Credit Hours and Grade Point for every course."
+            );
+
+            return;
+
+        }
+
+
+        if (
+            credit <= 0 ||
+            grade < 0 ||
+            grade > 4
+        ) {
+
+            alert(
+                "Please enter valid Credit Hours and Grade Point."
             );
 
             return;
@@ -464,19 +519,32 @@ function calculateGPA() {
     }
 
 
+    if (totalCredits === 0) {
+
+        alert(
+            "Please add at least one course."
+        );
+
+        return;
+
+    }
+
+
     let gpa =
         totalQualityPoints /
         totalCredits;
 
 
-    document.getElementById("result").innerHTML =
-
-        "Your GPA is: " +
+    document
+        .getElementById("result")
+        .innerHTML =
+        "🎓 Your GPA is: " +
         gpa.toFixed(2);
 
 }
 
 </script>
+
 
 </body>
 

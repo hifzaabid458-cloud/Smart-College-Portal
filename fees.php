@@ -10,64 +10,72 @@ if (!isset($_SESSION['user_id'])) {
 include 'db.php';
 
 $student_id = $_SESSION['user_id'];
-
 $full_name = $_SESSION['full_name'];
 
 
 /* Get Student Fee Record */
 
 $sql = "SELECT
+            id,
             student_id,
-            total_fee,
-            paid_amount,
-            due_date,
+            amount,
             status,
-            created_at
+            due_date
 
         FROM fees
 
-        WHERE student_id = '$student_id'
+        WHERE student_id = ?
 
         ORDER BY id DESC
 
         LIMIT 1";
 
 
-$result = mysqli_query(
-    $conn,
-    $sql
+$stmt = mysqli_prepare($conn, $sql);
+
+mysqli_stmt_bind_param(
+    $stmt,
+    "i",
+    $student_id
 );
 
+mysqli_stmt_execute($stmt);
 
-$fee = mysqli_fetch_assoc(
-    $result
-);
+$result = mysqli_stmt_get_result($stmt);
+
+$fee = mysqli_fetch_assoc($result);
 
 
 /* Fee Calculations */
 
 if ($fee) {
 
-    $total_fee =
-        $fee['total_fee'];
+    $amount = (float)$fee['amount'];
 
-    $paid_amount =
-        $fee['paid_amount'];
+    $status = $fee['status'];
 
-    $remaining_fee =
-        $total_fee
-        -
-        $paid_amount;
+    $due_date = $fee['due_date'];
 
-    $due_date =
-        $fee['due_date'];
+    /*
+     * Since the database contains one fee amount,
+     * we use the status to determine the remaining fee.
+     */
 
-    $status =
-        $fee['status'];
+    if (strtolower($status) === "paid") {
+
+        $paid_amount = $amount;
+        $remaining_fee = 0;
+
+    } else {
+
+        $paid_amount = 0;
+        $remaining_fee = $amount;
+
+    }
 
 } else {
 
-    $total_fee = 0;
+    $amount = 0;
 
     $paid_amount = 0;
 
@@ -76,7 +84,6 @@ if ($fee) {
     $due_date = "N/A";
 
     $status = "No Record";
-
 }
 
 ?>
@@ -89,8 +96,7 @@ if ($fee) {
     <meta charset="UTF-8">
 
     <meta name="viewport"
-          content="width=device-width,
-                   initial-scale=1.0">
+          content="width=device-width, initial-scale=1.0">
 
     <title>
         Fees - Smart College Portal
@@ -136,11 +142,10 @@ if ($fee) {
     <a href="results.php">
         📝 Results
     </a>
-	
-	<a href="student_reports.php">
 
+
+    <a href="student_reports.php">
         📈 My Reports & Analytics
-
     </a>
 
 
@@ -221,7 +226,7 @@ if ($fee) {
                 <?php
 
                 echo number_format(
-                    $total_fee,
+                    $amount,
                     2
                 );
 
@@ -317,29 +322,20 @@ if ($fee) {
         </h2>
 
 
-        <table
-            class="fee-table">
+        <table class="fee-table">
 
 
             <thead>
 
                 <tr>
-				
-				<th>
-                        student_id
-                    </th>
 
                     <th>
-                        Total Fee
-                    </th>
-														
-                    <th>
-                        Paid Amount
+                        Student ID
                     </th>
 
 
                     <th>
-                        Remaining Fee
+                        Amount
                     </th>
 
 
@@ -360,34 +356,21 @@ if ($fee) {
             <tbody>
 
 
-                <?php
+            <?php
 
-                if ($fee) {
+            if ($fee) {
 
-                ?>
+            ?>
 
 
                 <tr>
-				
-				<td>
-
-                        <?php
-
-                        echo $fee['student_id'];
-
-                        ?>
-
-                     </td>
 
                     <td>
 
-                        Rs.
-
                         <?php
 
-                        echo number_format(
-                            $total_fee,
-                            2
+                        echo htmlspecialchars(
+                            $fee['student_id']
                         );
 
                         ?>
@@ -402,23 +385,7 @@ if ($fee) {
                         <?php
 
                         echo number_format(
-                            $paid_amount,
-                            2
-                        );
-
-                        ?>
-
-                    </td>
-
-
-                    <td>
-
-                        Rs.
-
-                        <?php
-
-                        echo number_format(
-                            $remaining_fee,
+                            $amount,
                             2
                         );
 
@@ -455,17 +422,16 @@ if ($fee) {
                 </tr>
 
 
-                <?php
+            <?php
 
-                } else {
+            } else {
 
-                ?>
+            ?>
 
 
                 <tr>
 
-                    <td
-                        colspan="6">
+                    <td colspan="4">
 
                         No fee record
                         available yet.
@@ -475,11 +441,11 @@ if ($fee) {
                 </tr>
 
 
-                <?php
+            <?php
 
-                }
+            }
 
-                ?>
+            ?>
 
 
             </tbody>

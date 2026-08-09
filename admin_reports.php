@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 
 if (!isset($_SESSION['admin_id'])) {
@@ -8,7 +9,10 @@ if (!isset($_SESSION['admin_id'])) {
 
 include 'db.php';
 
-/* Total Students */
+
+/* =========================
+   TOTAL STUDENTS
+========================= */
 
 $student_query = mysqli_query(
     $conn,
@@ -22,7 +26,9 @@ $student_data = mysqli_fetch_assoc($student_query);
 $total_students = $student_data['total_students'];
 
 
-/* Total Courses */
+/* =========================
+   TOTAL COURSES
+========================= */
 
 $course_query = mysqli_query(
     $conn,
@@ -35,7 +41,9 @@ $course_data = mysqli_fetch_assoc($course_query);
 $total_courses = $course_data['total_courses'];
 
 
-/* Total Results */
+/* =========================
+   TOTAL RESULTS
+========================= */
 
 $result_query = mysqli_query(
     $conn,
@@ -48,7 +56,9 @@ $result_data = mysqli_fetch_assoc($result_query);
 $total_results = $result_data['total_results'];
 
 
-/* Average Marks */
+/* =========================
+   AVERAGE MARKS
+========================= */
 
 $average_query = mysqli_query(
     $conn,
@@ -61,7 +71,9 @@ $average_data = mysqli_fetch_assoc($average_query);
 $average_marks = $average_data['average_marks'];
 
 
-/* Top Student */
+/* =========================
+   TOP STUDENT
+========================= */
 
 $top_student_query = mysqli_query(
     $conn,
@@ -70,7 +82,7 @@ $top_student_query = mysqli_query(
         AVG(results.marks) AS average_marks
      FROM results
      JOIN users
-     ON results.student_id = users.id
+        ON results.student_id = users.id
      GROUP BY users.id, users.full_name
      ORDER BY average_marks DESC
      LIMIT 1"
@@ -79,7 +91,9 @@ $top_student_query = mysqli_query(
 $top_student = mysqli_fetch_assoc($top_student_query);
 
 
-/* Course Performance */
+/* =========================
+   COURSE PERFORMANCE
+========================= */
 
 $course_performance_query = mysqli_query(
     $conn,
@@ -88,21 +102,19 @@ $course_performance_query = mysqli_query(
         AVG(results.marks) AS average_marks
      FROM results
      JOIN courses
-     ON results.course_id = courses.id
+        ON results.course_id = courses.id
      GROUP BY courses.id, courses.course_name
      ORDER BY average_marks DESC"
 );
 
 
-/* Store Course Data */
-
 $course_names = [];
 
 $course_marks = [];
 
+
 while (
-    $course =
-    mysqli_fetch_assoc(
+    $course = mysqli_fetch_assoc(
         $course_performance_query
     )
 ) {
@@ -115,10 +127,12 @@ while (
             $course['average_marks'],
             2
         );
-
 }
 
-/* Grade Distribution */
+
+/* =========================
+   GRADE DISTRIBUTION
+========================= */
 
 $grade_distribution_query = mysqli_query(
     $conn,
@@ -130,13 +144,14 @@ $grade_distribution_query = mysqli_query(
      ORDER BY grade"
 );
 
+
 $grade_names = [];
 
 $grade_totals = [];
 
+
 while (
-    $grade =
-    mysqli_fetch_assoc(
+    $grade = mysqli_fetch_assoc(
         $grade_distribution_query
     )
 ) {
@@ -146,27 +161,27 @@ while (
 
     $grade_totals[] =
         $grade['total'];
-
 }
 
 
-/* Student Performance */
+/* =========================
+   STUDENT PERFORMANCE
+   Grade Point calculated
+   from marks
+========================= */
 
 $student_performance_query = mysqli_query(
     $conn,
     "SELECT
         users.full_name,
-        AVG(results.marks) AS average_marks,
-        AVG(results.grade_point) AS average_grade_point
+        AVG(results.marks) AS average_marks
      FROM results
      JOIN users
-     ON results.student_id = users.id
+        ON results.student_id = users.id
      GROUP BY users.id, users.full_name
      ORDER BY average_marks DESC"
 );
 
-
-/* Store Student Data */
 
 $student_names = [];
 
@@ -174,9 +189,9 @@ $student_marks = [];
 
 $student_grade_points = [];
 
+
 while (
-    $student =
-    mysqli_fetch_assoc(
+    $student = mysqli_fetch_assoc(
         $student_performance_query
     )
 ) {
@@ -184,21 +199,65 @@ while (
     $student_names[] =
         $student['full_name'];
 
+    $average_student_marks =
+        $student['average_marks'];
+
     $student_marks[] =
         round(
-            $student['average_marks'],
+            $average_student_marks,
             2
         );
+
+
+    /* Calculate Grade Point */
+
+    if ($average_student_marks >= 85) {
+
+        $grade_point = 4.00;
+
+    } elseif ($average_student_marks >= 80) {
+
+        $grade_point = 3.70;
+
+    } elseif ($average_student_marks >= 75) {
+
+        $grade_point = 3.30;
+
+    } elseif ($average_student_marks >= 70) {
+
+        $grade_point = 3.00;
+
+    } elseif ($average_student_marks >= 65) {
+
+        $grade_point = 2.70;
+
+    } elseif ($average_student_marks >= 60) {
+
+        $grade_point = 2.30;
+
+    } elseif ($average_student_marks >= 55) {
+
+        $grade_point = 2.00;
+
+    } elseif ($average_student_marks >= 50) {
+
+        $grade_point = 1.70;
+
+    } else {
+
+        $grade_point = 0.00;
+
+    }
+
 
     $student_grade_points[] =
-        round(
-            $student['average_grade_point'],
-            2
-        );
-
+        $grade_point;
 }
 
-/* Semester Performance */
+
+/* =========================
+   SEMESTER PERFORMANCE
+========================= */
 
 $semester_performance_query = mysqli_query(
     $conn,
@@ -210,13 +269,14 @@ $semester_performance_query = mysqli_query(
      ORDER BY semester"
 );
 
+
 $semester_names = [];
 
 $semester_marks = [];
 
+
 while (
-    $semester =
-    mysqli_fetch_assoc(
+    $semester = mysqli_fetch_assoc(
         $semester_performance_query
     )
 ) {
@@ -229,12 +289,12 @@ while (
             $semester['average_marks'],
             2
         );
-
 }
 
 ?>
 
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
@@ -242,200 +302,355 @@ while (
 <meta charset="UTF-8">
 
 <meta name="viewport"
-content="width=device-width, initial-scale=1.0">
+      content="width=device-width, initial-scale=1.0">
 
-<title>Reports - Smart College Portal</title>
+<title>
+Reports - Smart College Portal
+</title>
+
 
 <style>
 
 * {
+
     margin: 0;
+
     padding: 0;
+
     box-sizing: border-box;
+
 }
+
 
 body {
+
     font-family: Arial, sans-serif;
+
     background: #f3e8ff;
+
     color: #222;
+
 }
 
-/* Sidebar */
+
+/* =========================
+   SIDEBAR
+========================= */
 
 .sidebar {
+
     position: fixed;
+
     left: 0;
+
     top: 0;
+
     width: 240px;
+
     height: 100vh;
+
     background: #1e1b4b;
+
     padding: 25px 15px;
+
+    overflow-y: auto;
+
 }
+
 
 .sidebar h2 {
+
     color: white;
+
     text-align: center;
+
     margin-bottom: 30px;
+
 }
+
 
 .sidebar a {
+
     display: block;
+
     color: white;
+
     text-decoration: none;
+
     padding: 14px 15px;
+
     margin: 5px 0;
+
     border-radius: 6px;
+
 }
+
 
 .sidebar a:hover {
+
     background: #7c3aed;
+
 }
+
 
 .logout-link {
+
     margin-top: 30px !important;
+
 }
 
-/* Main Content */
+
+/* =========================
+   MAIN CONTENT
+========================= */
 
 .dashboard-content {
+
     margin-left: 240px;
+
     padding: 35px;
+
     min-height: 100vh;
+
     background: #f3e8ff;
+
 }
+
 
 .top-bar {
+
     display: flex;
+
     justify-content: space-between;
+
     align-items: center;
+
 }
+
 
 .top-bar h1 {
+
     color: #1e1b4b;
+
 }
+
 
 .admin-info {
+
     background: white;
+
     padding: 12px 20px;
+
     border-radius: 8px;
+
 }
 
-/* Back Button */
+
+/* =========================
+   BACK BUTTON
+========================= */
 
 .back {
+
     display: inline-block;
+
     margin-top: 25px;
+
     padding: 10px 15px;
+
     background: #7c3aed;
+
     color: white;
+
     text-decoration: none;
+
     border-radius: 6px;
+
 }
+
 
 .back:hover {
+
     background: #5b21b6;
+
 }
 
-/* Analytics Cards */
+
+/* =========================
+   ANALYTICS CARDS
+========================= */
 
 .analytics-container {
+
     display: grid;
+
     grid-template-columns:
-        repeat(auto-fit, minmax(200px, 1fr));
+        repeat(
+            auto-fit,
+            minmax(200px, 1fr)
+        );
 
     gap: 20px;
 
     margin-top: 25px;
+
 }
+
 
 .analytics-card {
+
     background: white;
+
     padding: 25px;
+
     border-radius: 15px;
 
     box-shadow:
-        0 4px 15px rgba(0,0,0,0.1);
+        0 4px 15px
+        rgba(0,0,0,0.1);
 
     text-align: center;
+
 }
+
 
 .analytics-card h3 {
+
     color: #7c3aed;
+
     margin-bottom: 15px;
+
 }
+
 
 .analytics-card p {
+
     font-size: 28px;
+
     font-weight: bold;
+
     color: #1e1b4b;
+
 }
 
-/* Report Cards */
+
+/* =========================
+   REPORT CARDS
+========================= */
 
 .report-card {
+
     background: white;
+
     margin-top: 25px;
+
     padding: 30px;
+
     border-radius: 15px;
 
     box-shadow:
-        0 4px 15px rgba(0,0,0,0.1);
+        0 4px 15px
+        rgba(0,0,0,0.1);
+
 }
+
 
 .report-card h2 {
+
     color: #7c3aed;
+
     margin-bottom: 20px;
+
 }
 
-/* Tables */
+
+/* =========================
+   TABLES
+========================= */
 
 .table-container {
+
     overflow-x: auto;
+
 }
 
+
 table {
+
     width: 100%;
+
     border-collapse: collapse;
+
 }
+
 
 th,
 td {
+
     padding: 15px;
+
     text-align: left;
+
     border-bottom: 1px solid #eee;
+
 }
+
 
 th {
+
     background: #f3e8ff;
+
     color: #1e1b4b;
+
 }
+
 
 td {
+
     color: #333;
+
 }
+
 
 tr:hover {
+
     background: #f9f7ff;
+
 }
 
-/* Charts */
+
+/* =========================
+   CHART
+========================= */
 
 .chart-container {
+
     width: 100%;
+
     height: 350px;
+
 }
 
-/* Responsive */
+
+/* =========================
+   RESPONSIVE
+========================= */
 
 @media (max-width: 700px) {
 
     .sidebar {
+
         width: 200px;
+
     }
 
+
     .dashboard-content {
+
         margin-left: 200px;
+
         padding: 20px;
+
     }
 
 }
@@ -444,69 +659,90 @@ tr:hover {
 
 </head>
 
+
 <body>
 
-<!-- Sidebar -->
+
+<!-- =========================
+     SIDEBAR
+========================= -->
 
 <div class="sidebar">
 
-    <h2>Smart College</h2>
+    <h2>
+        Smart College
+    </h2>
+
 
     <a href="admin_dashboard.php">
         🏠 Dashboard
     </a>
 
+
     <a href="manage_students.php">
         👨‍🎓 Manage Students
     </a>
+
 
     <a href="manage_courses.php">
         📚 Manage Courses
     </a>
 
+
     <a href="manage_teachers.php">
         👨‍🏫 Manage Teachers
     </a>
 
+
     <a href="manage_records.php">
         📋 Manage Records
     </a>
-	
-	<a href="admin_manage_fees.php">
-    💰 Manage Fees
-</a>
 
-<a href="admin_manage_announcements.php">
-    📢 Manage Announcements
-</a>
 
-<a href="admin_manage_assignments.php">
-    📄 Manage Assignments
-</a>
-	
-	 <a href="manage_attendance.php">
+    <a href="admin_manage_fees.php">
+        💰 Manage Fees
+    </a>
+
+
+    <a href="admin_manage_announcements.php">
+        📢 Manage Announcements
+    </a>
+
+
+    <a href="admin_manage_assignments.php">
+        📄 Manage Assignments
+    </a>
+
+
+    <a href="manage_attendance.php">
         📊 Manage Attendance
     </a>
+
 
     <a href="view_results.php">
         📊 View Results
     </a>
 
+
     <a href="teacher_gpa.php">
         🎓 Teacher GPA Calculator
     </a>
+
 
     <a href="calculate_sgpa.php">
         📊 Calculate SGPA
     </a>
 
+
     <a href="calculate_cgpa.php">
         📈 Calculate CGPA
     </a>
 
+
     <a href="admin_reports.php">
         📊 Reports & Analytics
     </a>
+
 
     <a href="admin_logout.php"
        class="logout-link">
@@ -518,15 +754,19 @@ tr:hover {
 </div>
 
 
-<!-- Main Content -->
+<!-- =========================
+     MAIN CONTENT
+========================= -->
 
 <div class="dashboard-content">
+
 
     <div class="top-bar">
 
         <h1>
             Reports & Analytics
         </h1>
+
 
         <div class="admin-info">
 
@@ -545,7 +785,9 @@ tr:hover {
     </a>
 
 
-    <!-- Analytics Cards -->
+    <!-- =========================
+         ANALYTICS CARDS
+    ========================= -->
 
     <div class="analytics-container">
 
@@ -557,13 +799,7 @@ tr:hover {
             </h3>
 
             <p>
-
-                <?php
-
-                echo $total_students;
-
-                ?>
-
+                <?php echo $total_students; ?>
             </p>
 
         </div>
@@ -576,13 +812,7 @@ tr:hover {
             </h3>
 
             <p>
-
-                <?php
-
-                echo $total_courses;
-
-                ?>
-
+                <?php echo $total_courses; ?>
             </p>
 
         </div>
@@ -595,13 +825,7 @@ tr:hover {
             </h3>
 
             <p>
-
-                <?php
-
-                echo $total_results;
-
-                ?>
-
+                <?php echo $total_results; ?>
             </p>
 
         </div>
@@ -617,7 +841,7 @@ tr:hover {
 
                 <?php
 
-                echo $average_marks
+                echo $average_marks !== null
                     ? number_format(
                         $average_marks,
                         2
@@ -637,12 +861,14 @@ tr:hover {
                 🏆 Top Student
             </h3>
 
-            <p style="font-size: 18px;">
+            <p style="font-size:18px;">
 
                 <?php
 
                 echo $top_student
-                    ? $top_student['full_name']
+                    ? htmlspecialchars(
+                        $top_student['full_name']
+                    )
                     : "No Data";
 
                 ?>
@@ -653,13 +879,18 @@ tr:hover {
 
 
     </div>
-	<!-- Course Performance Table -->
+
+
+    <!-- =========================
+         COURSE PERFORMANCE TABLE
+    ========================= -->
 
     <div class="report-card">
 
         <h2>
             📚 Course-wise Performance
         </h2>
+
 
         <div class="table-container">
 
@@ -698,11 +929,14 @@ tr:hover {
 
                         <?php
 
-                        echo $course_names[$i];
+                        echo htmlspecialchars(
+                            $course_names[$i]
+                        );
 
                         ?>
 
                     </td>
+
 
                     <td>
 
@@ -713,7 +947,7 @@ tr:hover {
                             2
                         );
 
-                        ?>
+                        ?>%
 
                     </td>
 
@@ -725,19 +959,19 @@ tr:hover {
 
                 } else {
 
-                    echo "
+                ?>
 
-                    <tr>
+                <tr>
 
-                        <td colspan='2'>
+                    <td colspan="2">
 
-                            No course data available.
+                        No course data available.
 
-                        </td>
+                    </td>
 
-                    </tr>
+                </tr>
 
-                    ";
+                <?php
 
                 }
 
@@ -750,13 +984,16 @@ tr:hover {
     </div>
 
 
-    <!-- Student Performance Table -->
+    <!-- =========================
+         STUDENT PERFORMANCE TABLE
+    ========================= -->
 
     <div class="report-card">
 
         <h2>
             🏆 Student Performance
         </h2>
+
 
         <div class="table-container">
 
@@ -773,7 +1010,7 @@ tr:hover {
                     </th>
 
                     <th>
-                        Average Grade Point
+                        Grade Point
                     </th>
 
                 </tr>
@@ -799,11 +1036,14 @@ tr:hover {
 
                         <?php
 
-                        echo $student_names[$i];
+                        echo htmlspecialchars(
+                            $student_names[$i]
+                        );
 
                         ?>
 
                     </td>
+
 
                     <td>
 
@@ -814,9 +1054,10 @@ tr:hover {
                             2
                         );
 
-                        ?>
+                        ?>%
 
                     </td>
+
 
                     <td>
 
@@ -839,19 +1080,19 @@ tr:hover {
 
                 } else {
 
-                    echo "
+                ?>
 
-                    <tr>
+                <tr>
 
-                        <td colspan='3'>
+                    <td colspan="3">
 
-                            No student data available.
+                        No student data available.
 
-                        </td>
+                    </td>
 
-                    </tr>
+                </tr>
 
-                    ";
+                <?php
 
                 }
 
@@ -862,15 +1103,16 @@ tr:hover {
         </div>
 
     </div>
-
-
-    <!-- Course Performance Chart -->
+<!-- =========================
+         COURSE PERFORMANCE CHART
+    ========================= -->
 
     <div class="report-card">
 
         <h2>
             📈 Course Performance Chart
         </h2>
+
 
         <div class="chart-container">
 
@@ -879,25 +1121,31 @@ tr:hover {
         </div>
 
     </div>
-	
-	<!-- Grade Distribution Chart -->
 
-<div class="report-card">
 
-    <h2>
-        📊 Grade Distribution
-    </h2>
+    <!-- =========================
+         GRADE DISTRIBUTION
+    ========================= -->
 
-    <div class="chart-container">
+    <div class="report-card">
 
-        <canvas id="gradeChart"></canvas>
+        <h2>
+            📊 Grade Distribution
+        </h2>
+
+
+        <div class="chart-container">
+
+            <canvas id="gradeChart"></canvas>
+
+        </div>
 
     </div>
 
-</div>
 
-
-    <!-- Student Performance Chart -->
+    <!-- =========================
+         STUDENT PERFORMANCE CHART
+    ========================= -->
 
     <div class="report-card">
 
@@ -905,55 +1153,63 @@ tr:hover {
             🏆 Student Performance Chart
         </h2>
 
+
         <div class="chart-container">
 
             <canvas id="studentChart"></canvas>
-       
-    </div>
-	
-	<!-- Semester Performance Chart -->
 
-<div class="report-card">
-
-    <h2>
-        📚 Semester Performance
-    </h2>
-
-    <div class="chart-container">
-
-        <canvas id="semesterChart"></canvas>
+        </div>
 
     </div>
+
+
+    <!-- =========================
+         SEMESTER PERFORMANCE CHART
+    ========================= -->
+
+    <div class="report-card">
+
+        <h2>
+            📚 Semester Performance
+        </h2>
+
+
+        <div class="chart-container">
+
+            <canvas id="semesterChart"></canvas>
+
+        </div>
+
+    </div>
+
 
 </div>
 
-<!-- Chart.js -->
+
+<!-- =========================
+     CHART.JS
+========================= -->
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 
 <script>
 
+
+/* =========================
+   COURSE CHART
+========================= */
+
 const courseNames =
-
 <?php
-
-echo json_encode(
-    $course_names
-);
-
-?>
+echo json_encode($course_names);
+?>;
 
 
 const courseMarks =
-
 <?php
-
-echo json_encode(
-    $course_marks
-);
-
-?>
+echo json_encode($course_marks);
+?>;
 
 
 new Chart(
@@ -975,7 +1231,7 @@ new Chart(
                 {
 
                     label:
-                    "Average Marks",
+                    "Average Marks (%)",
 
                     data:
                     courseMarks
@@ -1011,102 +1267,20 @@ new Chart(
 );
 
 
-const studentNames =
-
-<?php
-
-echo json_encode(
-    $student_names
-);
-
-?>
-
-
-const studentMarks =
-
-<?php
-
-echo json_encode(
-    $student_marks
-);
-
-?>
-
-
-new Chart(
-
-    document.getElementById(
-        "studentChart"
-    ),
-
-    {
-
-        type: "bar",
-
-        data: {
-
-            labels: studentNames,
-
-            datasets: [
-
-                {
-
-                    label:
-                    "Average Marks",
-
-                    data:
-                    studentMarks
-
-                }
-
-            ]
-
-        },
-
-        options: {
-
-            responsive: true,
-
-            maintainAspectRatio: false,
-
-            scales: {
-
-                y: {
-
-                    beginAtZero: true,
-
-                    max: 100
-
-                }
-
-            }
-
-        }
-
-    }
-
-);
+/* =========================
+   GRADE DISTRIBUTION
+========================= */
 
 const gradeNames =
-
 <?php
-
-echo json_encode(
-    $grade_names
-);
-
-?>
+echo json_encode($grade_names);
+?>;
 
 
 const gradeTotals =
-
 <?php
-
-echo json_encode(
-    $grade_totals
-);
-
-?>
+echo json_encode($grade_totals);
+?>;
 
 
 new Chart(
@@ -1172,26 +1346,92 @@ new Chart(
 
 );
 
-const semesterNames =
 
+/* =========================
+   STUDENT PERFORMANCE
+========================= */
+
+const studentNames =
 <?php
+echo json_encode($student_names);
+?>;
 
-echo json_encode(
-    $semester_names
+
+const studentMarks =
+<?php
+echo json_encode($student_marks);
+?>;
+
+
+new Chart(
+
+    document.getElementById(
+        "studentChart"
+    ),
+
+    {
+
+        type: "bar",
+
+        data: {
+
+            labels: studentNames,
+
+            datasets: [
+
+                {
+
+                    label:
+                    "Average Marks (%)",
+
+                    data:
+                    studentMarks
+
+                }
+
+            ]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            scales: {
+
+                y: {
+
+                    beginAtZero: true,
+
+                    max: 100
+
+                }
+
+            }
+
+        }
+
+    }
+
 );
 
-?>
+
+/* =========================
+   SEMESTER PERFORMANCE
+========================= */
+
+const semesterNames =
+<?php
+echo json_encode($semester_names);
+?>;
 
 
 const semesterMarks =
-
 <?php
-
-echo json_encode(
-    $semester_marks
-);
-
-?>
+echo json_encode($semester_marks);
+?>;
 
 
 new Chart(
@@ -1213,10 +1453,14 @@ new Chart(
                 {
 
                     label:
-                    "Average Marks",
+                    "Average Marks (%)",
 
                     data:
-                    semesterMarks
+                    semesterMarks,
+
+                    fill: false,
+
+                    tension: 0.3
 
                 }
 
@@ -1249,6 +1493,7 @@ new Chart(
 );
 
 </script>
+
 
 </body>
 
